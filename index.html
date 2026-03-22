@@ -798,7 +798,7 @@ img{max-width:100%}
     </div>
 
     <div style="margin-top:32px;text-align:center;color:#475569;font-size:12px">
-      Vytvořeno s ❤️ pro výpravné dobrodruhy · v6.7
+      Vytvořeno s ❤️ pro výpravné dobrodruhy · v6.8
     </div>
   </div>
 </div>
@@ -2769,7 +2769,7 @@ function clearAllData() {
   showToast('🗑️ Vše smazáno');
 }
 
-/* ===== PDF EXPORT (browser print — plná podpora češtiny) ===== */
+/* ===== PDF EXPORT — Noto Sans, A4, profesionální design ===== */
 function exportPDF() {
   const trip = state.currentTrip?.data;
   if (!trip) return;
@@ -2778,159 +2778,435 @@ function exportPDF() {
   const days = trip.dny || [];
   const info = trip.prakticke_info || {};
   const fd = state.currentTrip?.formData || {};
+  const fraze = trip.fraze || [];
 
+  const DAY_COLORS = ['#e85d26','#2563eb','#059669','#7c3aed','#d97706','#0891b2','#db2777','#65a30d'];
+
+  function safe(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  /* ── COVER ── */
+  const coverHtml = `
+  <div class="cover">
+    <div class="cover-top">
+      <div class="cover-flag">${safe(m.vlajka||'🚐')}</div>
+      <h1 class="cover-title">${safe(m.nazev||m.zeme||'Výprava')}</h1>
+      <p class="cover-subtitle">${safe(m.od||'')} → ${safe(m.do||'')}${m.pocet_osob?' · '+(m.pocet_osob||fd.pocetOsob||2)+' osob':''}</p>
+      ${m.perex ? `<p class="cover-perex">${safe(m.perex)}</p>` : ''}
+    </div>
+    <div class="cover-stats">
+      ${m.celkem_km?`<div class="cover-stat"><span class="cover-stat-val">${m.celkem_km}</span><span class="cover-stat-lbl">km celkem</span></div>`:''}
+      ${m.pocet_noci?`<div class="cover-stat"><span class="cover-stat-val">${m.pocet_noci}</span><span class="cover-stat-lbl">nocí</span></div>`:''}
+      ${days.length?`<div class="cover-stat"><span class="cover-stat-val">${days.length}</span><span class="cover-stat-lbl">etap</span></div>`:''}
+      ${m.pocet_osob||fd.pocetOsob?`<div class="cover-stat"><span class="cover-stat-val">${m.pocet_osob||fd.pocetOsob}</span><span class="cover-stat-lbl">osob</span></div>`:''}
+    </div>
+    <div class="cover-budget">
+      <div>
+        <div class="cover-budget-total">${budget.celkem_czk ? Math.round(budget.celkem_czk).toLocaleString('cs-CZ')+' Kč' : '—'}</div>
+        <div class="cover-budget-lbl">celkový rozpočet</div>
+      </div>
+      <div style="text-align:right">
+        <div class="cover-budget-total">${budget.na_osobu_czk ? Math.round(budget.na_osobu_czk).toLocaleString('cs-CZ')+' Kč' : '—'}</div>
+        <div class="cover-budget-lbl">na osobu</div>
+      </div>
+    </div>
+    <div class="cover-footer">Expedice 🚐 · Tvůj průvodce karavanovou výpravou</div>
+  </div>`;
+
+  /* ── DAYS ── */
   const daysHtml = days.map((day, idx) => {
-    const nocColor = ['#16a34a','#2563eb','#7c3aed','#d97706','#dc2626','#0891b2'][idx % 6];
-    const warnings = (day.warnings||[]).map(w =>
-      `<div class="pdf-warning">⚠️ ${esc(w.text||'')}</div>`).join('');
+    const color = DAY_COLORS[idx % DAY_COLORS.length];
     const noc = day.nocovani || {};
+    const warningsHtml = (day.warnings||[]).map(w =>
+      `<div class="warn-box">⚠️ ${safe(w.text||'')}</div>`).join('');
     const nocHtml = noc.nazev ? `
-      <div class="pdf-noc">
-        <span class="pdf-noc-icon">🏕️</span>
-        <div><strong>${esc(noc.nazev)}</strong>${noc.sluzby_text ? ' — '+esc(noc.sluzby_text) : ''}
-        ${noc.cena_eur ? `<br><span style="color:#16a34a;font-weight:700">${noc.cena_eur} €</span>` : noc.cena_czk ? `<br><span style="color:#16a34a;font-weight:700">${noc.cena_czk} Kč</span>` : ' · zdarma'}
+      <div class="noc-box">
+        <div class="noc-icon">🏕️</div>
+        <div class="noc-content">
+          <strong>${safe(noc.nazev)}</strong>
+          ${noc.sluzby_text ? `<span class="noc-services"> · ${safe(noc.sluzby_text)}</span>` : ''}
+          <br>
+          <span class="noc-price">${noc.cena_eur ? noc.cena_eur+' €/noc' : noc.cena_czk ? Math.round(noc.cena_czk)+' Kč/noc' : 'zdarma'}</span>
+          ${noc.max_delka_m ? `<span class="noc-detail"> · max. délka ${noc.max_delka_m} m</span>` : ''}
         </div>
       </div>` : '';
     return `
-      <div class="pdf-day">
-        <div class="pdf-day-header">
-          <div class="pdf-day-badge" style="background:${nocColor}">${day.cislo||idx+1}</div>
-          <div class="pdf-day-title-wrap">
-            <div class="pdf-day-title">${esc(day.nadpis||'Den '+(idx+1))}</div>
-            <div class="pdf-day-route">${esc(day.od||'')}${day.od&&day.do?' → ':''}${esc(day.do||'')} · ${esc(day.info_row||day.km+' km')}</div>
-          </div>
+    <div class="day-card" style="--day-color:${color}">
+      <div class="day-header">
+        <div class="day-num">${day.cislo||idx+1}</div>
+        <div class="day-header-text">
+          <div class="day-title">${safe(day.nadpis||'Den '+(idx+1))}</div>
+          <div class="day-route">${safe(day.od||'')}${day.od&&day.do?' → ':''}${safe(day.do||'')}${day.info_row ? ' · '+safe(day.info_row) : day.km ? ' · '+day.km+' km' : ''}</div>
         </div>
-        ${warnings}
-        ${nocHtml}
-        ${day.program ? `<div class="pdf-program">${esc(day.program)}</div>` : ''}
-        ${day.camper_tip ? `<div class="pdf-tip">💡 ${esc(day.camper_tip)}</div>` : ''}
-        ${day.jidlo ? `<div class="pdf-jidlo">🍽️ ${esc(day.jidlo)}</div>` : ''}
-      </div>`;
+      </div>
+      ${warningsHtml}
+      ${nocHtml}
+      ${day.program ? `<p class="day-program">${safe(day.program)}</p>` : ''}
+      <div class="day-chips">
+        ${day.camper_tip ? `<div class="chip chip-orange">💡 ${safe(day.camper_tip)}</div>` : ''}
+        ${day.jidlo ? `<div class="chip chip-green">🍽️ ${safe(day.jidlo)}</div>` : ''}
+        ${day.tankovani ? `<div class="chip chip-blue">⛽ ${safe(day.tankovani)}</div>` : ''}
+      </div>
+    </div>`;
   }).join('');
 
-  const budgetRows = (budget.polozky||[]).map(p =>
-    `<tr><td>${p.icon||''} ${esc(p.nazev||'')}</td><td style="color:#64748b;font-size:12px">${esc(p.detail||'')}</td><td class="pdf-amount">${Math.round(p.czk||0).toLocaleString('cs-CZ')} Kč</td></tr>`
-  ).join('');
+  /* ── BUDGET ── */
+  const budgetRows = (budget.polozky||[]).map(p => `
+    <tr>
+      <td class="bud-icon">${p.icon||''}</td>
+      <td class="bud-name">${safe(p.nazev||'')}</td>
+      <td class="bud-detail">${safe(p.detail||'')}</td>
+      <td class="bud-amount">${Math.round(p.czk||0).toLocaleString('cs-CZ')} Kč</td>
+    </tr>`).join('');
 
-  const tipy = (budget.tipy||[]).map(t => `<li>${esc(t)}</li>`).join('');
-  const dulezite = (info.dulezite||[]).map(d => `<li>${esc(d)}</li>`).join('');
+  const tipyHtml = (budget.tipy||[]).map(t => `<li>${safe(t)}</li>`).join('');
+  const duleziteHtml = (info.dulezite||[]).map(d => `<li>${safe(d)}</li>`).join('');
 
+  /* ── FRAZE ── */
+  const frazeHtml = fraze.length ? `
+    <div class="section">
+      <h2 class="section-title">💬 Užitečné fráze</h2>
+      <table class="fraze-table">
+        <thead><tr><th>Česky</th><th>Místně</th><th>Výslovnost</th></tr></thead>
+        <tbody>${fraze.map(f=>`<tr><td>${safe(f.cs)}</td><td class="fraze-orig">${safe(f.original)}</td><td class="fraze-ph">${safe(f.foneticky||'')}</td></tr>`).join('')}</tbody>
+      </table>
+    </div>` : '';
+
+  /* ── FULL HTML ── */
   const html = `<!DOCTYPE html>
 <html lang="cs">
 <head>
 <meta charset="UTF-8">
-<title>${esc(m.nazev||m.zeme||'Expedice')}</title>
+<title>${safe(m.nazev||m.zeme||'Expedice')}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400;0,600;0,700;0,900;1,400&display=swap" rel="stylesheet">
 <style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#0f172a;background:#fff;font-size:13px;line-height:1.6}
-  @media print{
-    body{font-size:11px}
-    .pdf-cover{page-break-after:always}
-    .pdf-day{page-break-inside:avoid}
-    @page{margin:15mm 14mm}
-  }
-  /* COVER */
-  .pdf-cover{background:#0a1628;color:white;padding:60px 40px 0;min-height:100vh;display:flex;flex-direction:column;justify-content:space-between}
-  .pdf-flag{font-size:72px;margin-bottom:24px;line-height:1}
-  .pdf-title{font-size:36px;font-weight:900;margin-bottom:12px;line-height:1.2}
-  .pdf-subtitle{font-size:16px;color:rgba(255,255,255,.55);margin-bottom:32px}
-  .pdf-perex{font-size:15px;color:rgba(255,255,255,.7);max-width:540px;line-height:1.7;font-style:italic;margin-bottom:40px}
-  .pdf-cover-stats{display:flex;gap:32px;margin-bottom:40px}
-  .pdf-cover-stat{text-align:center}
-  .pdf-cover-stat-val{font-size:28px;font-weight:900;color:#f97316}
-  .pdf-cover-stat-key{font-size:11px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
-  .pdf-cover-footer{background:#f97316;margin:0 -40px;padding:20px 40px;display:flex;justify-content:space-between;align-items:center}
-  .pdf-cover-footer-total{font-size:22px;font-weight:900;color:white}
-  .pdf-cover-footer-per{font-size:14px;color:rgba(255,255,255,.8)}
-  /* CONTENT */
-  .pdf-content{max-width:800px;margin:0 auto;padding:24px 20px}
-  .pdf-section-title{font-size:18px;font-weight:800;color:#0a1628;border-bottom:3px solid #f97316;padding-bottom:8px;margin:32px 0 16px}
-  /* DAY */
-  .pdf-day{margin-bottom:24px;padding:16px;border:1px solid #e2e8f0;border-radius:10px;background:#fafafa}
-  .pdf-day-header{display:flex;gap:12px;align-items:flex-start;margin-bottom:10px}
-  .pdf-day-badge{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;color:white;flex-shrink:0}
-  .pdf-day-title-wrap{flex:1}
-  .pdf-day-title{font-size:15px;font-weight:800;color:#0a1628}
-  .pdf-day-route{font-size:12px;color:#64748b;margin-top:2px}
-  .pdf-warning{background:#fef2f2;color:#dc2626;border-left:3px solid #dc2626;padding:6px 10px;border-radius:4px;font-size:12px;margin-bottom:6px}
-  .pdf-noc{display:flex;gap:10px;background:#f0fdf4;border-left:3px solid #16a34a;padding:8px 12px;border-radius:4px;margin-bottom:8px;font-size:12px}
-  .pdf-noc-icon{font-size:20px;flex-shrink:0}
-  .pdf-program{font-size:12px;color:#334155;line-height:1.7;margin-top:8px}
-  .pdf-tip{background:#fff7ed;border-left:3px solid #f97316;padding:6px 10px;border-radius:4px;font-size:12px;color:#92400e;margin-top:6px}
-  .pdf-jidlo{font-size:12px;color:#64748b;margin-top:6px}
-  /* BUDGET */
-  .pdf-budget-table{width:100%;border-collapse:collapse;margin-bottom:16px}
-  .pdf-budget-table td{padding:8px 10px;border-bottom:1px solid #f1f5f9;vertical-align:top}
-  .pdf-budget-table tr:last-child td{border-bottom:none}
-  .pdf-amount{text-align:right;font-weight:700;white-space:nowrap;color:#0a1628}
-  .pdf-budget-total{background:#0a1628;color:white;padding:12px 16px;border-radius:8px;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-  .pdf-budget-total-label{font-size:13px;font-weight:700}
-  .pdf-budget-total-val{font-size:20px;font-weight:900;color:#f97316}
-  .pdf-tipy{list-style:none;padding:0}
-  .pdf-tipy li{padding:5px 0 5px 20px;position:relative;font-size:12px;color:#334155;border-bottom:1px solid #f1f5f9}
-  .pdf-tipy li::before{content:'💡';position:absolute;left:0}
-  .pdf-info{font-size:12px;color:#334155;line-height:1.8;margin-bottom:12px}
-  .pdf-dulezite{list-style:none;padding:0}
-  .pdf-dulezite li{padding:4px 0 4px 18px;position:relative;font-size:12px;color:#334155}
-  .pdf-dulezite li::before{content:'→';position:absolute;left:0;color:#f97316;font-weight:700}
-  .pdf-footer{text-align:center;color:#94a3b8;font-size:11px;margin:40px 0 20px;padding-top:16px;border-top:1px solid #e2e8f0}
+/* ── RESET & BASE ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Noto Sans', 'DejaVu Sans', Arial, sans-serif;
+  font-size: 11pt;
+  line-height: 1.65;
+  color: #1e293b;
+  background: #fff;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* ── PAGE SETUP ── */
+@page {
+  size: A4;
+  margin: 1.5cm;
+}
+@media print {
+  body { font-size: 10pt; }
+  .cover { page-break-after: always; min-height: auto; }
+  .day-card { page-break-inside: avoid; }
+  .section { page-break-inside: avoid; }
+  .no-break { page-break-inside: avoid; }
+}
+
+/* ── COVER PAGE ── */
+.cover {
+  min-height: 100vh;
+  background: linear-gradient(160deg, #0a1628 0%, #1e3a5f 60%, #0a1628 100%);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 3cm 2cm 0;
+}
+.cover-top { flex: 1; }
+.cover-flag { font-size: 64pt; line-height: 1; margin-bottom: 0.6cm; }
+.cover-title {
+  font-size: 28pt;
+  font-weight: 900;
+  line-height: 1.15;
+  margin-bottom: 0.4cm;
+  color: #fff;
+}
+.cover-subtitle {
+  font-size: 13pt;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 0.8cm;
+}
+.cover-perex {
+  font-size: 12pt;
+  font-style: italic;
+  color: rgba(255,255,255,0.75);
+  max-width: 16cm;
+  line-height: 1.7;
+  margin-bottom: 1cm;
+}
+.cover-stats {
+  display: flex;
+  gap: 1.2cm;
+  margin-bottom: 1.2cm;
+}
+.cover-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(255,255,255,0.08);
+  border-radius: 8px;
+  padding: 0.4cm 0.7cm;
+  min-width: 2.5cm;
+}
+.cover-stat-val {
+  font-size: 22pt;
+  font-weight: 900;
+  color: #f97316;
+  line-height: 1;
+}
+.cover-stat-lbl {
+  font-size: 8pt;
+  color: rgba(255,255,255,0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5pt;
+  margin-top: 3pt;
+}
+.cover-budget {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f97316;
+  margin: 0 -2cm;
+  padding: 0.6cm 2cm;
+}
+.cover-budget-total { font-size: 20pt; font-weight: 900; color: #fff; }
+.cover-budget-lbl { font-size: 9pt; color: rgba(255,255,255,0.75); margin-top: 2pt; }
+.cover-footer {
+  text-align: center;
+  font-size: 9pt;
+  color: rgba(255,255,255,0.3);
+  padding: 0.4cm 0;
+}
+
+/* ── CONTENT WRAPPER ── */
+.content { padding: 0.5cm 0; }
+
+/* ── SECTION TITLES ── */
+.section { margin-bottom: 0.8cm; }
+.section-title {
+  font-size: 18pt;
+  font-weight: 900;
+  color: #0a1628;
+  border-left: 5px solid #f97316;
+  padding-left: 0.5cm;
+  margin: 1cm 0 0.6cm;
+  line-height: 1.2;
+}
+
+/* ── DAY CARDS ── */
+.day-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 0.5cm;
+  background: #fff;
+}
+.day-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5cm;
+  background: var(--day-color, #0a1628);
+  padding: 0.35cm 0.5cm;
+}
+.day-num {
+  width: 32pt;
+  height: 32pt;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+  font-weight: 900;
+  font-size: 14pt;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.day-header-text { flex: 1; }
+.day-title {
+  font-size: 14pt;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.2;
+}
+.day-route {
+  font-size: 9pt;
+  color: rgba(255,255,255,0.7);
+  margin-top: 2pt;
+}
+.day-body { padding: 0.4cm 0.5cm; }
+.day-program {
+  font-size: 11pt;
+  color: #334155;
+  line-height: 1.7;
+  padding: 0.4cm 0.5cm;
+  border-top: 1px solid #f1f5f9;
+}
+
+/* ── WARN BOX ── */
+.warn-box {
+  background: #fef2f2;
+  border-left: 4px solid #dc2626;
+  color: #991b1b;
+  font-size: 10pt;
+  padding: 0.25cm 0.4cm;
+  margin: 0;
+}
+
+/* ── NOC BOX ── */
+.noc-box {
+  display: flex;
+  gap: 0.4cm;
+  align-items: flex-start;
+  background: #f0fdf4;
+  border-left: 4px solid #16a34a;
+  padding: 0.3cm 0.4cm;
+  font-size: 10pt;
+}
+.noc-icon { font-size: 16pt; flex-shrink: 0; line-height: 1.2; }
+.noc-content { flex: 1; line-height: 1.6; }
+.noc-price { color: #16a34a; font-weight: 700; }
+.noc-services { color: #64748b; }
+.noc-detail { color: #64748b; }
+
+/* ── CHIPS ── */
+.day-chips { display: flex; flex-direction: column; gap: 4pt; padding: 0.3cm 0.5cm; border-top: 1px solid #f8fafc; }
+.chip { font-size: 10pt; padding: 0.2cm 0.4cm; border-radius: 6px; line-height: 1.5; }
+.chip-orange { background: #fff7ed; color: #92400e; border-left: 3px solid #f97316; }
+.chip-green  { background: #f0fdf4; color: #166534; border-left: 3px solid #16a34a; }
+.chip-blue   { background: #eff6ff; color: #1e40af; border-left: 3px solid #2563eb; }
+
+/* ── BUDGET TABLE ── */
+.budget-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11pt;
+  margin-bottom: 0.4cm;
+}
+.budget-table thead tr { background: #0a1628; color: #fff; }
+.budget-table thead th {
+  padding: 0.25cm 0.4cm;
+  font-size: 9pt;
+  font-weight: 700;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.3pt;
+}
+.budget-table tbody tr { border-bottom: 1px solid #f1f5f9; }
+.budget-table tbody tr:nth-child(even) { background: #f8fafc; }
+.bud-icon { width: 1.2cm; text-align: center; padding: 0.3cm 0.2cm; font-size: 14pt; }
+.bud-name { font-weight: 700; color: #0a1628; padding: 0.3cm 0.3cm; }
+.bud-detail { color: #64748b; font-size: 10pt; padding: 0.3cm 0.3cm; }
+.bud-amount { text-align: right; font-weight: 700; color: #0a1628; white-space: nowrap; padding: 0.3cm 0.4cm; }
+.budget-total-row {
+  background: #0a1628;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.35cm 0.5cm;
+  border-radius: 8px;
+  margin-bottom: 0.2cm;
+}
+.budget-total-label { font-size: 11pt; font-weight: 700; color: #fff; }
+.budget-total-val { font-size: 18pt; font-weight: 900; color: #f97316; }
+.budget-per { text-align: right; font-size: 10pt; color: #64748b; margin-bottom: 0.4cm; }
+.tipy-list { list-style: none; padding: 0; }
+.tipy-list li {
+  padding: 0.2cm 0.3cm 0.2cm 1cm;
+  position: relative;
+  font-size: 10pt;
+  color: #334155;
+  border-bottom: 1px solid #f1f5f9;
+  line-height: 1.6;
+}
+.tipy-list li::before { content: '💡'; position: absolute; left: 0.2cm; }
+
+/* ── PRACTICAL INFO ── */
+.info-text { font-size: 11pt; color: #334155; line-height: 1.75; margin-bottom: 0.4cm; }
+.dulezite-list { list-style: none; padding: 0; }
+.dulezite-list li {
+  padding: 0.2cm 0.3cm 0.2cm 0.9cm;
+  position: relative;
+  font-size: 10.5pt;
+  color: #334155;
+  line-height: 1.6;
+  border-bottom: 1px solid #f1f5f9;
+}
+.dulezite-list li::before { content: '→'; position: absolute; left: 0.2cm; color: #f97316; font-weight: 700; }
+
+/* ── FRAZE TABLE ── */
+.fraze-table { width: 100%; border-collapse: collapse; font-size: 10.5pt; }
+.fraze-table thead tr { background: #f1f5f9; }
+.fraze-table thead th { padding: 0.25cm 0.4cm; text-align: left; font-size: 9pt; font-weight: 700; text-transform: uppercase; color: #64748b; }
+.fraze-table tbody tr { border-bottom: 1px solid #f1f5f9; }
+.fraze-table tbody tr:hover { background: #fafafa; }
+.fraze-table td { padding: 0.25cm 0.4cm; vertical-align: top; }
+.fraze-orig { font-weight: 700; color: #f97316; }
+.fraze-ph { color: #64748b; font-style: italic; }
+
+/* ── FOOTER ── */
+.doc-footer {
+  text-align: center;
+  font-size: 9pt;
+  color: #94a3b8;
+  padding-top: 0.5cm;
+  margin-top: 0.8cm;
+  border-top: 1px solid #e2e8f0;
+}
 </style>
 </head>
 <body>
 
-<div class="pdf-cover">
-  <div>
-    <div class="pdf-flag">${m.vlajka||'🚐'}</div>
-    <div class="pdf-title">${esc(m.nazev||m.zeme||'Výprava')}</div>
-    <div class="pdf-subtitle">${esc(m.od||'')} → ${esc(m.do||'')} · ${m.pocet_osob||fd.pocetOsob||2} osob${m.pocet_noci ? ' · '+m.pocet_noci+' nocí' : ''}</div>
-    ${m.perex ? `<div class="pdf-perex">${esc(m.perex)}</div>` : ''}
-    <div class="pdf-cover-stats">
-      ${m.celkem_km ? `<div class="pdf-cover-stat"><div class="pdf-cover-stat-val">${m.celkem_km} km</div><div class="pdf-cover-stat-key">celkem km</div></div>` : ''}
-      ${m.pocet_noci ? `<div class="pdf-cover-stat"><div class="pdf-cover-stat-val">${m.pocet_noci}</div><div class="pdf-cover-stat-key">nocí</div></div>` : ''}
-      ${days.length ? `<div class="pdf-cover-stat"><div class="pdf-cover-stat-val">${days.length}</div><div class="pdf-cover-stat-key">etap</div></div>` : ''}
+${coverHtml}
+
+<div class="content">
+
+  <div class="section">
+    <h2 class="section-title">📅 Itinerář</h2>
+    ${daysHtml}
+  </div>
+
+  <div class="section no-break">
+    <h2 class="section-title">💰 Rozpočet</h2>
+    <table class="budget-table">
+      <thead><tr><th></th><th>Položka</th><th>Detail</th><th style="text-align:right">Částka</th></tr></thead>
+      <tbody>${budgetRows}</tbody>
+    </table>
+    <div class="budget-total-row">
+      <div class="budget-total-label">CELKEM</div>
+      <div class="budget-total-val">${budget.celkem_czk ? Math.round(budget.celkem_czk).toLocaleString('cs-CZ')+' Kč' : '—'}</div>
     </div>
+    ${budget.na_osobu_czk ? `<div class="budget-per">${Math.round(budget.na_osobu_czk).toLocaleString('cs-CZ')} Kč na osobu</div>` : ''}
+    ${tipyHtml ? `<ul class="tipy-list">${tipyHtml}</ul>` : ''}
   </div>
-  <div class="pdf-cover-footer">
-    <div class="pdf-cover-footer-total">${budget.celkem_czk ? Math.round(budget.celkem_czk).toLocaleString('cs-CZ')+' Kč celkem' : ''}</div>
-    <div class="pdf-cover-footer-per">${budget.na_osobu_czk ? Math.round(budget.na_osobu_czk).toLocaleString('cs-CZ')+' Kč / osoba' : ''}</div>
+
+  ${info.text || duleziteHtml ? `
+  <div class="section no-break">
+    <h2 class="section-title">ℹ️ Praktické informace</h2>
+    ${info.text ? `<p class="info-text">${safe(info.text)}</p>` : ''}
+    ${duleziteHtml ? `<ul class="dulezite-list">${duleziteHtml}</ul>` : ''}
+  </div>` : ''}
+
+  ${frazeHtml}
+
+  <div class="doc-footer">
+    Vytvořeno aplikací Expedice 🚐 · Vytvořeno s ❤️ pro výpravné dobrodruhy
   </div>
+
 </div>
-
-<div class="pdf-content">
-
-  <div class="pdf-section-title">📅 Itinerář</div>
-  ${daysHtml}
-
-  <div class="pdf-section-title">💰 Rozpočet</div>
-  <table class="pdf-budget-table">
-    ${budgetRows}
-  </table>
-  <div class="pdf-budget-total">
-    <div class="pdf-budget-total-label">CELKEM</div>
-    <div class="pdf-budget-total-val">${budget.celkem_czk ? Math.round(budget.celkem_czk).toLocaleString('cs-CZ')+' Kč' : '—'}</div>
-  </div>
-  ${budget.na_osobu_czk ? `<div style="text-align:right;font-size:12px;color:#64748b;margin-bottom:12px">${Math.round(budget.na_osobu_czk).toLocaleString('cs-CZ')} Kč na osobu</div>` : ''}
-  ${tipy ? `<ul class="pdf-tipy">${tipy}</ul>` : ''}
-
-  ${info.text || dulezite ? `
-  <div class="pdf-section-title">ℹ️ Praktické informace</div>
-  ${info.text ? `<div class="pdf-info">${esc(info.text)}</div>` : ''}
-  ${dulezite ? `<ul class="pdf-dulezite">${dulezite}</ul>` : ''}
-  ` : ''}
-
-  <div class="pdf-footer">Vytvořeno aplikací Expedice 🚐 · Vytvořeno s ❤️ pro výpravné dobrodruhy</div>
-</div>
-
 </body></html>`;
 
   const win = window.open('', '_blank');
-  if (!win) { showToast('❌ Povolte vyskakovací okna pro tisk PDF', 4000); return; }
+  if (!win) { showToast('❌ Povolte vyskakovací okna v prohlížeči', 4000); return; }
   win.document.write(html);
   win.document.close();
   win.focus();
-  setTimeout(() => { win.print(); }, 600);
-  showToast('📄 Okno pro tisk otevřeno — ulož jako PDF');
+  setTimeout(() => { win.print(); }, 800);
+  showToast('📄 PDF připraveno — v dialogu zvol "Uložit jako PDF"');
 }
+
 
 function hexToRgb(hex) {
   const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
