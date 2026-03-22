@@ -1,0 +1,2942 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a1628">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Expedice">
+<link rel="manifest" href="manifest.json">
+<title>Expedice 🚐</title>
+<style>
+/* ===== RESET & CUSTOM PROPERTIES ===== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0a1628; --navy2:#1e3a5f; --navy3:#142236;
+  --orange:#f97316; --orange-d:#c2410c; --orange-l:#fff7ed;
+  --green:#16a34a; --green-l:#f0fdf4; --green-b:#bbf7d0;
+  --blue:#2563eb; --blue-l:#eff6ff; --blue-b:#bfdbfe;
+  --red:#dc2626; --red-l:#fef2f2; --red-b:#fecaca;
+  --amber:#d97706; --amber-l:#fffbeb; --amber-b:#fde68a;
+  --purple:#7c3aed; --purple-l:#f5f3ff;
+  --g50:#f8fafc; --g100:#f1f5f9; --g200:#e2e8f0;
+  --g300:#cbd5e1; --g400:#94a3b8; --g500:#64748b;
+  --g700:#334155; --g900:#0f172a;
+  --r:16px; --r2:12px; --r3:8px;
+  --shadow:0 1px 4px rgba(0,0,0,.08);
+  --shadow2:0 4px 16px rgba(0,0,0,.12);
+  --transition:.15s ease;
+}
+html{font-size:16px;-webkit-text-size-adjust:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  background:var(--g50); color:var(--g900);
+  line-height:1.5; min-height:100dvh;
+  overscroll-behavior:none;
+}
+input,button,select,textarea{font:inherit}
+button{cursor:pointer;border:none;background:none}
+a{color:inherit;text-decoration:none}
+img{max-width:100%}
+
+/* ===== UTILITIES ===== */
+.hidden{display:none!important}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+.truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ===== VIEWS ===== */
+.view{
+  min-height:100dvh;
+  display:flex; flex-direction:column;
+  animation:fadeIn .2s ease;
+}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ===== APP HEADER ===== */
+.app-header{
+  position:sticky; top:0; z-index:50;
+  background:var(--navy);
+  padding:12px 16px 12px;
+  padding-top:calc(12px + env(safe-area-inset-top));
+  display:flex; align-items:center; gap:10px;
+  min-height:56px;
+}
+.header-logo{
+  font-size:18px; font-weight:900; color:white;
+  letter-spacing:-.5px;
+}
+.header-logo span{color:var(--orange)}
+.header-title{
+  font-size:16px; font-weight:700; color:white;
+  flex:1; truncate:true;
+}
+.header-actions{display:flex;gap:4px;margin-left:auto}
+.icon-btn{
+  width:44px; height:44px;
+  border-radius:var(--r3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px; color:rgba(255,255,255,.8);
+  transition:background var(--transition);
+}
+.icon-btn:hover,.icon-btn:active{background:rgba(255,255,255,.12)}
+.back-btn{
+  display:flex;align-items:center;gap:4px;
+  padding:0 12px 0 4px;
+  height:44px; border-radius:var(--r3);
+  font-size:14px; font-weight:600; color:rgba(255,255,255,.8);
+  transition:background var(--transition);
+}
+.back-btn:hover{background:rgba(255,255,255,.1)}
+
+/* ===== VIEW: LOCK ===== */
+#view-lock{
+  background:var(--navy);
+  align-items:center; justify-content:center;
+  padding:24px 32px;
+  padding-bottom:calc(24px + env(safe-area-inset-bottom));
+}
+.lock-inner{
+  width:100%; max-width:320px;
+  display:flex; flex-direction:column; align-items:center; gap:20px;
+}
+.lock-icon{font-size:64px; line-height:1}
+.lock-brand{
+  text-align:center;
+}
+.lock-brand h1{
+  font-size:32px; font-weight:900; color:white; letter-spacing:-1px;
+}
+.lock-brand h1 span{color:var(--orange)}
+.lock-brand p{font-size:14px; color:rgba(255,255,255,.5); margin-top:4px}
+.lock-form{width:100%; display:flex; flex-direction:column; gap:12px}
+.lock-input{
+  width:100%; padding:16px; border-radius:var(--r);
+  background:rgba(255,255,255,.1);
+  border:2px solid rgba(255,255,255,.15);
+  color:white; font-size:16px; text-align:center;
+  outline:none; transition:border-color var(--transition);
+}
+.lock-input::placeholder{color:rgba(255,255,255,.35)}
+.lock-input:focus{border-color:var(--orange)}
+.lock-btn{
+  padding:16px; border-radius:var(--r);
+  background:var(--orange); color:white;
+  font-size:16px; font-weight:700;
+  transition:background var(--transition), transform .1s;
+  box-shadow:0 4px 16px rgba(249,115,22,.35);
+}
+.lock-btn:active{transform:scale(.98)}
+.lock-error{
+  color:#fca5a5; font-size:13px; font-weight:600;
+  text-align:center; animation:shake .3s ease;
+}
+@keyframes shake{0%,100%{transform:none}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+/* ===== VIEW: SETUP ===== */
+#view-setup{
+  background:var(--g50);
+  align-items:center; justify-content:center;
+  padding:24px 20px;
+}
+.setup-card{
+  background:white; border-radius:20px;
+  padding:28px; width:100%; max-width:400px;
+  box-shadow:var(--shadow2);
+}
+.setup-card h2{font-size:20px;font-weight:800;color:var(--navy);margin-bottom:6px}
+.setup-card p{font-size:13px;color:var(--g500);margin-bottom:20px;line-height:1.6}
+.setup-hint{
+  font-size:12px;color:var(--g500);margin-top:8px;
+  background:var(--g50);border-radius:var(--r3);padding:10px 12px;
+}
+.setup-hint a{color:var(--orange);font-weight:600}
+
+/* ===== VIEW: LIBRARY ===== */
+#view-library{background:var(--g50)}
+.library-body{
+  flex:1; padding:16px;
+  padding-bottom:calc(16px + env(safe-area-inset-bottom));
+  max-width:640px; width:100%; margin:0 auto;
+}
+.new-trip-btn{
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  width:100%; padding:18px;
+  background:var(--orange); border-radius:var(--r);
+  color:white; font-size:17px; font-weight:800;
+  box-shadow:0 4px 16px rgba(249,115,22,.3);
+  margin-bottom:20px;
+  transition:transform .1s, background var(--transition);
+}
+.new-trip-btn:active{transform:scale(.98);background:var(--orange-d)}
+.library-section-title{
+  font-size:11px; font-weight:700; text-transform:uppercase;
+  letter-spacing:1.5px; color:var(--g500); margin-bottom:12px;
+}
+.trip-card{
+  background:white; border-radius:var(--r); padding:16px;
+  margin-bottom:12px; box-shadow:var(--shadow);
+  border:1px solid var(--g200);
+  display:flex; align-items:center; gap:14px;
+  transition:box-shadow var(--transition);
+}
+.trip-card:active{box-shadow:var(--shadow2)}
+.trip-card-flag{font-size:28px;flex-shrink:0;line-height:1}
+.trip-card-info{flex:1;min-width:0}
+.trip-card-name{font-size:15px;font-weight:800;color:var(--navy);margin-bottom:3px}
+.trip-card-meta{font-size:12px;color:var(--g500)}
+.trip-card-stats{
+  display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;
+}
+.trip-stat-tag{
+  font-size:10px;font-weight:700;
+  padding:2px 8px;border-radius:999px;
+  background:var(--g100);color:var(--g700);
+}
+.trip-card-actions{display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+.trip-open-btn{
+  padding:8px 14px;border-radius:var(--r2);
+  background:var(--navy);color:white;
+  font-size:12px;font-weight:700;
+}
+.trip-delete-btn{
+  padding:6px;border-radius:var(--r2);
+  color:var(--g400);font-size:16px;
+  transition:color var(--transition);
+}
+.trip-delete-btn:hover{color:var(--red)}
+.library-empty{
+  text-align:center;padding:40px 20px;color:var(--g400);
+}
+.library-empty-icon{font-size:48px;margin-bottom:12px}
+.library-empty p{font-size:14px}
+
+/* ===== VIEW: PLANNER ===== */
+#view-planner{background:var(--g50)}
+.planner-body{
+  flex:1;overflow-y:auto;
+  padding:20px 16px;
+  padding-bottom:calc(20px + env(safe-area-inset-bottom));
+  max-width:640px;width:100%;margin:0 auto;
+}
+
+/* Form shared */
+.form-section{margin-bottom:24px}
+.form-label{
+  font-size:11px;font-weight:700;text-transform:uppercase;
+  letter-spacing:1px;color:var(--g500);
+  display:flex;align-items:center;gap:6px;
+  margin-bottom:10px;
+}
+.form-input{
+  width:100%;padding:14px 16px;
+  border:2px solid var(--g200);border-radius:var(--r);
+  background:white;font-size:16px;color:var(--g900);
+  outline:none;transition:border-color var(--transition);
+}
+.form-input:focus{border-color:var(--orange)}
+.form-input::placeholder{color:var(--g400)}
+.dest-input-wrap{position:relative}
+.dest-flag{
+  position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  font-size:20px;pointer-events:none;
+}
+
+/* Date grid */
+.date-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.date-col{display:flex;flex-direction:column;gap:8px}
+.date-col label{font-size:12px;font-weight:600;color:var(--g500)}
+
+/* Traveler stepper */
+.stepper{
+  display:flex;align-items:center;gap:16px;
+  background:white;border:2px solid var(--g200);
+  border-radius:var(--r);padding:8px 16px;width:fit-content;
+}
+.stepper-btn{
+  width:40px;height:40px;border-radius:50%;
+  background:var(--g100);color:var(--navy);
+  font-size:20px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  transition:background var(--transition);
+}
+.stepper-btn:hover{background:var(--g200)}
+.stepper-btn:active{background:var(--orange);color:white}
+.stepper-val{font-size:24px;font-weight:900;color:var(--navy);min-width:40px;text-align:center}
+.stepper-label{font-size:13px;color:var(--g500)}
+
+/* Vehicle type */
+.vtype-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.vtype-btn{
+  border:2px solid var(--g200);border-radius:var(--r);
+  padding:14px 8px;text-align:center;cursor:pointer;
+  transition:all var(--transition);background:white;
+}
+.vtype-btn.active{border-color:var(--orange);background:var(--orange-l)}
+.vtype-icon{font-size:28px;margin-bottom:6px}
+.vtype-label{font-size:12px;font-weight:700;color:var(--g700)}
+
+/* Dimensions row */
+.dim-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:12px}
+.dim-field label{
+  display:block;font-size:10px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.5px;
+  color:var(--g500);margin-bottom:5px;
+}
+.dim-input{
+  width:100%;padding:12px;border:2px solid var(--g200);
+  border-radius:var(--r2);background:white;font-size:16px;
+  font-weight:700;color:var(--navy);text-align:center;
+  outline:none;transition:border-color var(--transition);
+}
+.dim-input:focus{border-color:var(--orange)}
+.dim-unit{
+  font-size:10px;color:var(--g400);text-align:center;margin-top:3px;font-weight:600;
+}
+
+/* Services toggles */
+.services-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+@media(min-width:400px){.services-grid{grid-template-columns:repeat(3,1fr)}}
+.svc-toggle{
+  border:2px solid var(--g200);border-radius:var(--r2);
+  padding:12px 8px;text-align:center;cursor:pointer;
+  background:white;transition:all var(--transition);
+}
+.svc-toggle.active{border-color:var(--blue);background:var(--blue-l)}
+.svc-icon{font-size:20px;margin-bottom:4px}
+.svc-label{font-size:10px;font-weight:700;color:var(--g700);text-transform:uppercase;letter-spacing:.3px}
+
+/* Chips */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{
+  padding:8px 14px;border-radius:999px;
+  border:2px solid var(--g200);background:white;
+  font-size:13px;font-weight:600;color:var(--g700);
+  cursor:pointer;transition:all var(--transition);
+  user-select:none;
+}
+.chip.active{background:var(--orange);border-color:var(--orange);color:white}
+.chip.active-green{background:var(--green);border-color:var(--green);color:white}
+
+/* Style selector */
+.style-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.style-btn{
+  border:2px solid var(--g200);border-radius:var(--r2);
+  padding:12px 6px;text-align:center;cursor:pointer;
+  background:white;transition:all var(--transition);
+}
+.style-btn.active{border-color:var(--green);background:var(--green-l)}
+.style-icon{font-size:22px;margin-bottom:4px}
+.style-label{font-size:11px;font-weight:700;color:var(--g700)}
+
+/* Generate button */
+.generate-btn{
+  width:100%;padding:20px;
+  background:var(--orange);border-radius:var(--r);
+  color:white;font-size:18px;font-weight:800;
+  box-shadow:0 4px 20px rgba(249,115,22,.4);
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  transition:transform .1s,background var(--transition);
+  margin-top:8px;
+}
+.generate-btn:active{transform:scale(.98);background:var(--orange-d)}
+
+/* ===== VIEW: LOADING ===== */
+#view-loading{
+  background:var(--navy);
+  align-items:center;justify-content:center;
+  padding:32px 20px;
+}
+.loading-inner{
+  width:100%;max-width:400px;
+}
+.loading-title{
+  font-size:22px;font-weight:900;color:white;
+  margin-bottom:4px;
+}
+.loading-dest{color:var(--orange)}
+.loading-sub{font-size:14px;color:rgba(255,255,255,.5);margin-bottom:32px}
+.progress-list{display:flex;flex-direction:column;gap:2px}
+.progress-step{
+  display:flex;align-items:center;gap:14px;
+  padding:14px 16px;border-radius:var(--r2);
+  transition:background var(--transition);
+}
+.progress-step.step-active{background:rgba(255,255,255,.08)}
+.step-icon{
+  width:42px;height:42px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;flex-shrink:0;
+  transition:background var(--transition);
+}
+.step-icon.done{background:var(--green)}
+.step-icon.active{background:var(--orange);animation:pulseBg 1.5s infinite}
+.step-icon.wait{background:rgba(255,255,255,.1)}
+@keyframes pulseBg{0%,100%{opacity:1}50%{opacity:.6}}
+.step-text{flex:1}
+.step-title{font-size:14px;font-weight:700;color:white}
+.step-sub{font-size:12px;color:rgba(255,255,255,.45);margin-top:2px}
+.step-badge{
+  font-size:10px;font-weight:700;padding:3px 8px;
+  border-radius:999px;
+}
+.badge-done{background:rgba(22,163,74,.25);color:#4ade80}
+.badge-active{background:rgba(249,115,22,.25);color:#fb923c}
+.loading-cancel{
+  margin-top:28px;width:100%;
+  padding:14px;border-radius:var(--r);
+  border:1.5px solid rgba(255,255,255,.2);
+  color:rgba(255,255,255,.6);font-size:14px;font-weight:600;
+  transition:all var(--transition);
+}
+.loading-cancel:hover{border-color:rgba(255,255,255,.4);color:white}
+
+/* ===== VIEW: RESULTS ===== */
+#view-results{background:var(--g50)}
+.results-header-card{
+  background:linear-gradient(135deg,var(--navy),var(--navy2));
+  padding:20px 16px 24px;
+  color:white;
+}
+.results-dest{font-size:24px;font-weight:900;margin-bottom:2px}
+.results-meta{font-size:13px;color:rgba(255,255,255,.55);margin-bottom:16px}
+.results-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.results-stat{
+  background:rgba(255,255,255,.08);border-radius:var(--r2);
+  padding:12px;text-align:center;
+}
+.results-stat-val{font-size:22px;font-weight:900;color:var(--orange)}
+.results-stat-key{font-size:10px;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.results-perex{
+  font-size:14px;color:rgba(255,255,255,.7);
+  margin-top:14px;line-height:1.65;font-style:italic;
+}
+
+/* Tabs */
+.results-tabs{
+  position:sticky;top:56px;
+  background:white;z-index:40;
+  border-bottom:2px solid var(--g200);
+  display:flex;
+  padding-top:env(safe-area-inset-top,0);
+}
+.tab-btn{
+  flex:1;padding:14px 4px;
+  font-size:12px;font-weight:700;
+  color:var(--g500);
+  border-bottom:3px solid transparent;
+  margin-bottom:-2px;
+  transition:all var(--transition);
+}
+.tab-btn.active{color:var(--orange);border-bottom-color:var(--orange)}
+
+/* Tab body */
+.tab-content{
+  flex:1;padding:16px;
+  padding-bottom:calc(16px + env(safe-area-inset-bottom));
+  max-width:640px;width:100%;margin:0 auto;
+}
+.tab-content.hidden{display:none}
+
+/* ===== DAY CARDS ===== */
+.day-card{
+  background:white;border-radius:var(--r);
+  border:1.5px solid var(--g200);
+  margin-bottom:12px;overflow:hidden;
+  box-shadow:var(--shadow);
+}
+.day-card-header{
+  display:flex;align-items:center;gap:12px;
+  padding:14px 16px;cursor:pointer;
+  user-select:none;
+}
+.day-badge{
+  width:44px;height:44px;border-radius:50%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  flex-shrink:0;color:white;
+}
+.day-badge-label{font-size:7px;font-weight:700;text-transform:uppercase;opacity:.8}
+.day-badge-num{font-size:18px;font-weight:900;line-height:1}
+.day-header-info{flex:1;min-width:0}
+.day-title{font-size:15px;font-weight:800;color:var(--navy);margin-bottom:2px}
+.day-route{font-size:12px;color:var(--g500)}
+.day-chips{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+.dchip{
+  font-size:9px;font-weight:700;padding:3px 7px;
+  border-radius:999px;
+}
+.dchip-km{background:var(--blue-l);color:var(--blue)}
+.dchip-camp{background:var(--green-l);color:var(--green)}
+.dchip-warn{background:var(--red-l);color:var(--red)}
+.day-chevron{
+  font-size:14px;color:var(--g400);flex-shrink:0;
+  transition:transform .2s;margin-left:4px;
+}
+.day-card.open .day-chevron{transform:rotate(180deg)}
+
+/* Day body */
+.day-body{
+  border-top:1px solid var(--g100);
+  padding:14px 16px 16px;
+  display:none;
+}
+.day-card.open .day-body{display:block}
+
+/* Info cards inside day */
+.info-card{
+  border-radius:var(--r2);padding:12px 14px;
+  margin-bottom:10px;
+}
+.info-card:last-child{margin-bottom:0}
+.info-card-route{background:var(--g50);border:1px solid var(--g200)}
+.info-card-warning{background:var(--red-l);border:1px solid var(--red-b)}
+.info-card-camp{background:var(--green-l);border:1px solid var(--green-b)}
+.info-card-program{background:var(--blue-l);border:1px solid var(--blue-b)}
+.info-card-tip{background:var(--amber-l);border:1px solid var(--amber-b)}
+.info-card-food{background:var(--purple-l);border:1px solid #ddd6fe}
+.info-card-weather{background:var(--g50);border:1px solid var(--g200)}
+.info-card-hdr{
+  display:flex;align-items:center;gap:6px;
+  font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.5px;margin-bottom:6px;
+}
+.info-card-hdr-route{color:var(--g500)}
+.info-card-hdr-warning{color:var(--red)}
+.info-card-hdr-camp{color:var(--green)}
+.info-card-hdr-program{color:var(--blue)}
+.info-card-hdr-tip{color:var(--amber)}
+.info-card-hdr-food{color:var(--purple)}
+.info-card-hdr-weather{color:var(--g500)}
+.info-card-body{font-size:13px;color:var(--g700);line-height:1.65}
+.info-card-body strong{color:var(--g900)}
+.services-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.svc-tag{
+  font-size:10px;font-weight:700;padding:3px 8px;
+  border-radius:999px;background:white;
+  border:1px solid var(--green-b);color:var(--green);
+}
+.booking-link{
+  display:inline-flex;align-items:center;gap:4px;
+  margin-top:8px;font-size:12px;font-weight:700;
+  color:var(--blue);text-decoration:underline;
+}
+
+/* ===== BUDGET TAB ===== */
+.budget-total{
+  background:var(--navy);border-radius:var(--r);
+  padding:20px;margin-bottom:16px;
+  text-align:center;
+  color:white;font-size:38px;font-weight:900;
+}
+.budget-total-label{font-size:11px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:1px}
+.budget-total-amount{font-size:38px;font-weight:900;color:var(--orange);margin:4px 0}
+.budget-total-per{font-size:13px;color:rgba(255,255,255,.5)}
+.budget-rows{}
+.budget-row{
+  display:flex;align-items:center;gap:12px;
+  background:white;border-radius:var(--r2);
+  padding:14px;margin-bottom:8px;
+  border:1px solid var(--g200);
+}
+.budget-icon{font-size:22px;flex-shrink:0;width:32px;text-align:center}
+.budget-info{flex:1}
+.budget-cat{font-size:14px;font-weight:700;color:var(--navy)}
+.budget-det{font-size:11px;color:var(--g500);margin-top:2px}
+.budget-bar-wrap{height:4px;background:var(--g100);border-radius:999px;margin-top:6px;overflow:hidden}
+.budget-bar{height:100%;border-radius:999px}
+.budget-amount{font-size:16px;font-weight:800;color:var(--navy)}
+.savings-card{
+  background:var(--green-l);border:1px solid var(--green-b);
+  border-radius:var(--r2);padding:14px;margin-top:8px;
+}
+.savings-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--green);margin-bottom:8px}
+.saving-item{font-size:13px;color:var(--g700);line-height:1.65;padding:3px 0;border-bottom:1px solid var(--green-b)}
+.saving-item:last-child{border-bottom:none}
+
+/* ===== CHECKLIST TAB ===== */
+.check-section{margin-bottom:24px}
+.check-section-title{
+  font-size:11px;font-weight:700;text-transform:uppercase;
+  letter-spacing:1px;color:var(--g500);
+  display:flex;align-items:center;gap:8px;
+  margin-bottom:10px;
+}
+.check-progress-tag{
+  font-size:10px;font-weight:700;
+  padding:2px 8px;border-radius:999px;
+  background:var(--green-l);color:var(--green);
+  margin-left:auto;
+}
+.check-item{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 0;border-bottom:1px solid var(--g100);
+  cursor:pointer;
+}
+.check-item:last-child{border-bottom:none}
+.check-box{
+  width:24px;height:24px;border-radius:6px;
+  border:2px solid var(--g300);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;color:white;
+  transition:all var(--transition);
+}
+.check-box.checked{background:var(--green);border-color:var(--green)}
+.check-text{
+  flex:1;font-size:13px;color:var(--g700);line-height:1.5;
+}
+.check-text.checked{text-decoration:line-through;color:var(--g400)}
+.prio-tag{
+  font-size:9px;font-weight:700;padding:2px 6px;
+  border-radius:999px;flex-shrink:0;
+}
+.prio-vysoka{background:var(--red-l);color:var(--red)}
+.prio-stredni{background:var(--amber-l);color:var(--amber)}
+.prio-nizka{background:var(--g100);color:var(--g500)}
+
+/* ===== PHRASES TAB ===== */
+.phrase-row{
+  display:flex;align-items:center;gap:12px;
+  padding:12px;background:white;
+  border-radius:var(--r2);margin-bottom:8px;
+  border:1px solid var(--g200);
+}
+.phrase-cs{font-size:13px;font-weight:700;color:var(--navy);min-width:120px;flex-shrink:0}
+.phrase-original{font-size:14px;font-weight:800;color:var(--orange);flex:1}
+.phrase-phonetic{font-size:11px;color:var(--g500);margin-top:2px}
+.phrase-play{
+  width:36px;height:36px;border-radius:50%;
+  background:var(--g100);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;transition:background var(--transition);
+}
+.phrase-play:hover{background:var(--orange-l)}
+.prakticky-card{
+  background:var(--blue-l);border:1px solid var(--blue-b);
+  border-radius:var(--r);padding:16px;margin-bottom:16px;
+}
+.prakticky-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--blue);margin-bottom:8px}
+.prakticky-text{font-size:13px;color:var(--g700);line-height:1.7}
+.dulezite-item{
+  display:flex;align-items:flex-start;gap:8px;
+  padding:8px 0;border-bottom:1px solid var(--blue-b);
+  font-size:13px;color:var(--g700);line-height:1.5;
+}
+.dulezite-item:last-child{border-bottom:none}
+
+/* ===== MODAL ===== */
+.modal-overlay{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.5);
+  z-index:200;
+  display:flex;align-items:center;justify-content:center;
+  padding:20px;
+}
+.modal-card{
+  background:white;border-radius:20px;
+  padding:28px;width:100%;max-width:380px;
+  box-shadow:0 20px 60px rgba(0,0,0,.3);
+}
+.modal-card h3{font-size:18px;font-weight:800;color:var(--navy);margin-bottom:16px}
+.modal-actions{display:flex;gap:10px;margin-top:20px}
+.btn-primary{
+  flex:1;padding:14px;border-radius:var(--r);
+  background:var(--orange);color:white;
+  font-size:15px;font-weight:700;
+}
+.btn-secondary{
+  flex:1;padding:14px;border-radius:var(--r);
+  border:2px solid var(--g200);color:var(--g700);
+  font-size:15px;font-weight:700;
+}
+
+/* ===== FORM INPUT SHARED ===== */
+.field-group{display:flex;flex-direction:column;gap:8px}
+.field-hint{font-size:11px;color:var(--g400)}
+
+/* ===== TOAST ===== */
+#toast{
+  position:fixed;bottom:calc(24px + env(safe-area-inset-bottom));
+  left:50%;transform:translateX(-50%);
+  background:var(--g900);color:white;
+  padding:12px 20px;border-radius:999px;
+  font-size:14px;font-weight:600;
+  z-index:300;white-space:nowrap;
+  opacity:0;transition:opacity .2s;
+  pointer-events:none;
+}
+#toast.show{opacity:1}
+
+/* ===== DESKTOP ===== */
+@media(min-width:768px){
+  .planner-body,.library-body,.tab-content{
+    max-width:640px;margin:0 auto;
+  }
+  .results-tabs{top:56px}
+  .vtype-grid{grid-template-columns:repeat(3,1fr);max-width:400px}
+  .services-grid{grid-template-columns:repeat(6,1fr)}
+}
+.trip-map-wrap{margin:16px 0;border-radius:16px;overflow:hidden;border:1px solid var(--g200)}
+#trip-map{height:260px;width:100%}
+.trip-map-legend{display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px;background:var(--g50)}
+.trip-map-legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--g600);font-weight:600}
+.trip-map-legend-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;border:2px solid rgba(0,0,0,.15)}
+.results-stat-pp{font-size:11px;color:#93c5fd;margin-top:5px;font-weight:600;opacity:.9}
+.chat-msg{margin-bottom:14px}
+.chat-msg-user{display:flex;justify-content:flex-end}
+.chat-msg-user .chat-bubble{background:var(--orange);color:white;border-radius:16px 16px 4px 16px;padding:10px 14px;max-width:80%;font-size:13px;line-height:1.5}
+.chat-msg-ai .chat-bubble{background:var(--g100);color:var(--g700);border-radius:16px 16px 16px 4px;padding:10px 14px;max-width:90%;font-size:13px;line-height:1.5}
+.chat-typing{opacity:.6;font-style:italic}
+.check-add-row{display:flex;gap:8px;padding:10px 0 2px}
+.check-add-input{flex:1;border:1px solid var(--g200);border-radius:8px;background:var(--g100);color:var(--g700);padding:7px 11px;font-size:13px}
+.check-add-input:focus{outline:none;border-color:var(--orange)}
+.check-add-btn{background:var(--orange);color:white;border:none;border-radius:8px;width:36px;font-size:20px;cursor:pointer;flex-shrink:0;line-height:1}
+.check-del-btn{background:none;border:none;color:var(--g300);cursor:pointer;padding:0 2px;font-size:15px;flex-shrink:0}
+.check-del-btn:hover{color:var(--red)}
+.check-item.custom{cursor:default}
+.check-item.custom .check-box,.check-item.custom .check-text{cursor:pointer}
+.budget-actual-row{display:flex;align-items:center;gap:8px;margin-top:6px;padding-top:6px;border-top:1px dashed var(--g200)}
+.budget-actual-label{font-size:11px;color:var(--g500);flex-shrink:0}
+.budget-actual-input{flex:1;border:1px solid var(--g200);border-radius:6px;padding:4px 8px;font-size:13px;font-weight:700;background:var(--g50);color:var(--g700);max-width:120px}
+.budget-actual-input:focus{outline:none;border-color:var(--green)}
+.budget-actual-saved{font-size:13px;font-weight:700;color:var(--green)}
+.budget-summary-actual{margin-top:8px;font-size:13px;color:#86efac;font-weight:600}
+.budget-diff-over{color:#fca5a5}
+.budget-diff-under{color:#86efac}
+.trip-status-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;margin-left:8px}
+.status-planovany{background:#dbeafe;color:#1d4ed8}
+.status-probiha{background:#dcfce7;color:#15803d}
+.status-archivovany{background:#f1f5f9;color:#64748b}
+.trip-action-bar{display:flex;gap:8px;padding:12px 0;border-top:1px solid var(--g200);margin-top:4px;flex-wrap:wrap}
+.trip-action-btn{flex:1;min-width:120px;padding:10px 14px;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer}
+.btn-start{background:#16a34a;color:white}
+.btn-archive{background:#64748b;color:white}
+.btn-reopen{background:#2563eb;color:white}
+.library-card-actions{display:flex;gap:6px;margin-top:8px}
+.lib-btn{padding:6px 12px;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer}
+.lib-btn-edit{background:var(--g100);color:var(--g600)}
+.lib-btn-delete{background:#fee2e2;color:#dc2626}
+.lib-btn-open{background:var(--orange);color:white;flex:1}
+.day-photos{margin-top:12px;padding-top:12px;border-top:1px solid var(--g200)}
+.day-photos-title{font-size:11px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.day-photos-grid{display:flex;gap:8px;flex-wrap:wrap}
+.day-photo-thumb{width:80px;height:80px;border-radius:8px;object-fit:cover;cursor:pointer;border:2px solid var(--g200)}
+.day-photo-thumb:hover{border-color:var(--orange)}
+.day-photo-add{width:80px;height:80px;border-radius:8px;border:2px dashed var(--g300);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;font-size:24px;color:var(--g400);background:var(--g50)}
+.day-photo-add:hover{border-color:var(--orange);color:var(--orange)}
+.day-photo-del{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);color:white;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.day-photo-wrap{position:relative;display:inline-block}
+</style>
+</head>
+<body>
+
+<!-- ===== VIEWS ===== -->
+
+<!-- LOCK -->
+<div id="view-lock" class="view">
+  <div style="min-height:100vh;background:linear-gradient(135deg,#0a1628 0%,#1e3a5f 50%,#0a1628 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px">
+    <!-- Logo -->
+    <div style="text-align:center;margin-bottom:40px">
+      <div style="font-size:64px;margin-bottom:12px">🚐</div>
+      <div style="font-size:32px;font-weight:900;color:white;letter-spacing:-1px">Expe<span style="color:#f97316">dice</span></div>
+      <div style="font-size:14px;color:#94a3b8;margin-top:6px">Tvůj průvodce karavanovou výpravou</div>
+    </div>
+
+    <!-- API key field -->
+    <div style="width:100%;max-width:360px;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-size:12px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:1px">API Klíč (Anthropic)</div>
+        <button onclick="showApiGuide()" style="background:none;border:none;color:#f97316;font-size:12px;cursor:pointer;font-weight:600">❓ Jak získat?</button>
+      </div>
+      <input id="lock-api-input" type="password" placeholder="sk-ant-…"
+        style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:14px 16px;font-size:14px;color:white;outline:none"
+        onkeydown="if(event.key==='Enter')handleUnlock()">
+      <div style="font-size:11px;color:#64748b;margin-top:6px">Klíč se uloží pouze v tvém prohlížeči. Nikam se neposílá.</div>
+    </div>
+
+    <div style="width:100%;max-width:360px;margin-top:8px">
+      <button onclick="handleUnlock()" style="width:100%;background:#f97316;color:white;border:none;border-radius:14px;padding:16px;font-size:16px;font-weight:700;cursor:pointer">
+        🚐 Vstoupit do Expedice
+      </button>
+    </div>
+
+    <div style="margin-top:32px;text-align:center;color:#475569;font-size:12px">
+      Vytvořeno s ❤️ pro výpravné dobrodruhy
+    </div>
+  </div>
+</div>
+
+<!-- SETUP (API key) -->
+<div id="view-setup" class="view hidden">
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:24px 20px;background:var(--g50)">
+    <div class="setup-card">
+      <h2>🔑 Nastav API klíč</h2>
+      <p>Aplikace potřebuje přístup k Anthropic Claude API. Klíč se uloží pouze do tvého prohlížeče — nikam jinam se neposílá.</p>
+      <input type="text" id="setup-key-input" class="form-input"
+        placeholder="sk-ant-api03-…" autocomplete="off"
+        style="font-family:monospace;font-size:13px">
+      <div class="setup-hint">
+        Klíč získáš na <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>.
+        Formát: <code>sk-ant-api03-…</code>
+      </div>
+      <button class="generate-btn" style="margin-top:16px" onclick="handleSetupSave()">
+        💾 Uložit a pokračovat
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- LIBRARY -->
+<div id="view-library" class="view hidden">
+  <header class="app-header">
+    <div class="header-logo">🚐 Expe<span>dice</span></div>
+    <div class="header-actions">
+      <button class="icon-btn" onclick="showSettings()" title="Nastavení">⚙️</button>
+    </div>
+  </header>
+  <div class="library-body">
+    <button class="new-trip-btn" onclick="showView('planner')">
+      🗺️ Naplánovat nový trip
+    </button>
+    <div id="trips-list"></div>
+  </div>
+</div>
+
+<!-- PLANNER -->
+<div id="view-planner" class="view hidden">
+  <header class="app-header">
+    <button class="back-btn" onclick="showView('library')">← Zpět</button>
+    <div class="header-title">Nový trip</div>
+  </header>
+  <div class="planner-body">
+
+    <!-- Destination -->
+    <div class="form-section">
+      <div class="form-label">🌍 Cílová destinace</div>
+      <div class="dest-input-wrap">
+        <input id="f-dest" type="text" class="form-input"
+          placeholder="např. Chorvatsko, Slovinsko, Alpy, Skotsko…"
+          style="font-size:18px;font-weight:700;padding-right:48px">
+        <span class="dest-flag" id="dest-flag">🌍</span>
+      </div>
+    </div>
+
+    <!-- Dates -->
+    <div class="form-section">
+      <div class="form-label">📅 Termín cesty</div>
+      <div class="date-grid">
+        <div class="date-col">
+          <label>Odjezd</label>
+          <input id="f-date-from" type="date" class="form-input" style="font-size:15px">
+          <input id="f-time-from" type="time" class="form-input" value="08:00" style="font-size:15px">
+        </div>
+        <div class="date-col">
+          <label>Návrat</label>
+          <input id="f-date-to" type="date" class="form-input" style="font-size:15px">
+          <input id="f-time-to" type="time" class="form-input" value="18:00" style="font-size:15px">
+        </div>
+      </div>
+    </div>
+
+    <!-- Travelers -->
+    <div class="form-section">
+      <div class="form-label">👥 Počet cestujících</div>
+      <div class="stepper">
+        <button class="stepper-btn" onclick="changeCount(-1)">−</button>
+        <div>
+          <span class="stepper-val" id="traveler-count">2</span>
+          <div class="stepper-label" style="font-size:11px;color:var(--g400);text-align:center">osob</div>
+        </div>
+        <button class="stepper-btn" onclick="changeCount(1)">+</button>
+      </div>
+    </div>
+
+    <!-- Vehicle type -->
+    <div class="form-section">
+      <div class="form-label">🚐 Typ vozidla</div>
+      <div class="vtype-grid" id="vtype-grid">
+        <div class="vtype-btn active" data-vtype="minivan" onclick="setVtype(this)">
+          <div class="vtype-icon">🚐</div>
+          <div class="vtype-label">Minivan</div>
+        </div>
+        <div class="vtype-btn" data-vtype="obytnak" onclick="setVtype(this)">
+          <div class="vtype-icon">🚌</div>
+          <div class="vtype-label">Obytňák</div>
+        </div>
+        <div class="vtype-btn" data-vtype="karavan" onclick="setVtype(this)">
+          <div class="vtype-icon">🏕️</div>
+          <div class="vtype-label">Karavan</div>
+        </div>
+      </div>
+      <div class="dim-row">
+        <div class="dim-field">
+          <label>Délka</label>
+          <input id="f-delka" type="number" class="dim-input" value="5" step="0.1" min="3" max="12">
+          <div class="dim-unit">metrů</div>
+        </div>
+        <div class="dim-field">
+          <label>Výška</label>
+          <input id="f-vyska" type="number" class="dim-input" value="2.3" step="0.1" min="1.8" max="4.5">
+          <div class="dim-unit">metrů</div>
+        </div>
+        <div class="dim-field">
+          <label>Spotřeba</label>
+          <input id="f-spotreba" type="number" class="dim-input" value="8" step="0.5" min="5" max="30">
+          <div class="dim-unit">l/100km</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Services -->
+    <div class="form-section">
+      <div class="form-label">🔌 Potřebné služby kempu</div>
+      <div class="services-grid" id="services-grid">
+        <div class="svc-toggle active" data-svc="elektřina" onclick="toggleSvc(this)">
+          <div class="svc-icon">🔌</div>
+          <div class="svc-label">Elektřina</div>
+        </div>
+        <div class="svc-toggle active" data-svc="voda" onclick="toggleSvc(this)">
+          <div class="svc-icon">💧</div>
+          <div class="svc-label">Voda</div>
+        </div>
+        <div class="svc-toggle active" data-svc="sprcha" onclick="toggleSvc(this)">
+          <div class="svc-icon">🚿</div>
+          <div class="svc-label">Sprcha</div>
+        </div>
+        <div class="svc-toggle active" data-svc="wc" onclick="toggleSvc(this)">
+          <div class="svc-icon">🚽</div>
+          <div class="svc-label">WC</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Overnight style -->
+    <div class="form-section">
+      <div class="form-label">🏕️ Styl ubytování</div>
+      <div class="style-grid" id="style-grid">
+        <div class="style-btn active" data-style="kempy" onclick="toggleStyle(this)">
+          <div class="style-icon">⛺</div>
+          <div class="style-label">Kempy</div>
+        </div>
+        <div class="style-btn active" data-style="stellplatz" onclick="toggleStyle(this)">
+          <div class="style-icon">🅿️</div>
+          <div class="style-label">Stellplatz</div>
+        </div>
+        <div class="style-btn" data-style="divocina" onclick="toggleStyle(this)">
+          <div class="style-icon">🌲</div>
+          <div class="style-label">Divočina</div>
+        </div>
+        <div class="style-btn" data-style="mix" onclick="toggleStyle(this)">
+          <div class="style-icon">🔀</div>
+          <div class="style-label">Mix / cokoliv</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fuel type -->
+    <div class="form-section">
+      <div class="form-label">⛽ Typ paliva</div>
+      <div class="chips" id="fuel-chips">
+        <div class="chip active" data-fuel="benzin" onclick="setFuelType(this)">Benzin</div>
+        <div class="chip" data-fuel="diesel" onclick="setFuelType(this)">Diesel</div>
+        <div class="chip" data-fuel="lpg" onclick="setFuelType(this)">LPG</div>
+        <div class="chip" data-fuel="hybrid" onclick="setFuelType(this)">Hybrid</div>
+      </div>
+    </div>
+
+    <!-- Interests -->
+    <div class="form-section">
+      <div class="form-label">❤️ Zájmy</div>
+      <div class="chips" id="interests-chips">
+        <div class="chip active" data-interest="příroda" onclick="toggleChip(this)">🏔️ Příroda</div>
+        <div class="chip" data-interest="pláže" onclick="toggleChip(this)">🏊 Pláže</div>
+        <div class="chip" data-interest="kultura" onclick="toggleChip(this)">🏛️ Kultura</div>
+        <div class="chip active" data-interest="jídlo" onclick="toggleChip(this)">🍷 Jídlo & víno</div>
+        <div class="chip" data-interest="cyklo" onclick="toggleChip(this)">🚴 Cyklistika</div>
+        <div class="chip" data-interest="hory" onclick="toggleChip(this)">🧗 Hory & trekking</div>
+        <div class="chip" data-interest="voda" onclick="toggleChip(this)">🌊 Vodní sporty</div>
+        <div class="chip" data-interest="města" onclick="toggleChip(this)">🏙️ Města</div>
+        <div class="chip" data-interest="fotografie" onclick="toggleChip(this)">📸 Fotografie</div>
+      </div>
+    </div>
+
+    <!-- Pace -->
+    <div class="form-section">
+      <div class="form-label">🛣️ Tempo jízdy</div>
+      <div class="chips" id="pace-chips">
+        <div class="chip" data-pace="pohodové" onclick="setPace(this)">🐢 Pohodové</div>
+        <div class="chip active" data-pace="vyvážené" onclick="setPace(this)">⚖️ Vyvážené</div>
+        <div class="chip" data-pace="intenzivní" onclick="setPace(this)">⚡ Intenzivní</div>
+      </div>
+    </div>
+
+    <!-- Departure city -->
+    <div class="form-section">
+      <div class="form-label">📍 Místo odjezdu (volitelné)</div>
+      <input id="f-odjezd" type="text" class="form-input"
+        placeholder="Praha" value="Praha" style="font-size:15px">
+    </div>
+
+    <!-- Notes -->
+    <div class="form-section">
+      <div class="form-label">📝 Zvláštní přání (volitelné)</div>
+      <textarea id="f-notes" class="form-input"
+        placeholder="Např: Rádi se koupeme, máme ratlíka, nechceme mýtné…"
+        rows="3" style="resize:none;font-size:15px"></textarea>
+    </div>
+
+    <button class="generate-btn" onclick="startGeneration()">
+      🚐 Naplánovat trip
+    </button>
+    <button onclick="loadTestTrip()" style="display:block;width:100%;margin-top:10px;padding:12px;border:2px dashed var(--g300);border-radius:14px;background:transparent;color:var(--g500);font-size:13px;font-weight:600;cursor:pointer;text-align:center">🧪 Načíst testovací trip (bez API)</button>
+    <div style="height:20px"></div>
+
+  </div>
+</div>
+
+<!-- LOADING -->
+<div id="view-loading" class="view hidden" style="min-height:100dvh">
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:32px 20px;background:var(--navy)">
+    <div class="loading-inner">
+      <div class="loading-title">🚐 Plánuji <span class="loading-dest" id="loading-dest">trip</span></div>
+      <div class="loading-sub" id="loading-sub">AI pracuje — bude to chvíli trvat…</div>
+      <div class="progress-list" id="progress-list"></div>
+      <button class="loading-cancel" onclick="cancelGeneration()">Zrušit</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div id="view-results" class="view hidden">
+  <header class="app-header">
+    <button class="back-btn" onclick="showView('library')">← Výpravy</button>
+    <div class="header-title truncate" id="results-title">Itinerář</div>
+    <div class="header-actions">
+      <button class="icon-btn" onclick="saveCurrentTrip()" title="Uložit trip" id="save-btn">💾</button>
+      <button class="icon-btn" onclick="exportPDF()" title="Export PDF">📄</button>
+      <button class="icon-btn" onclick="shareTrip()" title="Sdílet">📤</button>
+    </div>
+  </header>
+  <div id="results-header-card" class="results-header-card"></div>
+  <div id="trip-action-bar" style="padding:0 4px"></div>
+  <div class="results-tabs">
+    <button class="tab-btn active" onclick="switchTab('days',this)">📅 Dny</button>
+    <button class="tab-btn" onclick="switchTab('budget',this)">💰 Budget</button>
+    <button class="tab-btn" onclick="switchTab('check',this)">✅ Check</button>
+    <button class="tab-btn" onclick="switchTab('phrases',this)">🗣️ Jazyk</button>
+    <button class="tab-btn" onclick="switchTab('chat',this)" data-tab="chat">💬 Chat</button>
+    <button onclick="generateExpeditionBook()" title="Expediční kniha" style="background:none;border:none;cursor:pointer;font-size:20px;padding:4px;margin-left:auto">📖</button>
+  </div>
+  <div id="trip-map-wrap" class="trip-map-wrap hidden">
+    <div id="trip-map"></div>
+    <div id="trip-map-legend" class="trip-map-legend"></div>
+  </div>
+  <div id="tab-days" class="tab-content"></div>
+  <div id="tab-budget" class="tab-content hidden"></div>
+  <div id="tab-check" class="tab-content hidden"></div>
+  <div id="tab-phrases" class="tab-content hidden"></div>
+  <div id="tab-chat" class="tab-pane" style="display:none">
+    <div id="chat-messages" style="padding:12px 0;min-height:200px"></div>
+    <div style="display:flex;gap:8px;padding:12px 0;border-top:1px solid var(--g200)">
+      <input id="chat-input" type="text" placeholder="Zeptej se na cokoli o tripu…" style="flex:1;border:1px solid var(--g200);border-radius:10px;padding:9px 13px;font-size:14px;background:var(--g50);color:var(--g700)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMessage()}">
+      <button onclick="sendChatMessage()" style="background:var(--orange);color:white;border:none;border-radius:10px;padding:9px 16px;font-size:14px;font-weight:700;cursor:pointer">→</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div id="modal-settings" class="modal-overlay hidden" onclick="closeSettingsOnBg(event)">
+  <div class="modal-card">
+    <h3>⚙️ Nastavení</h3>
+    <div class="field-group">
+      <div class="form-label">API klíč (Anthropic)</div>
+      <input id="settings-key" type="text" class="form-input"
+        placeholder="sk-ant-api03-…" autocomplete="off"
+        style="font-family:monospace;font-size:13px">
+      <button onclick="showApiGuide()" style="background:none;border:none;color:var(--blue);font-size:13px;cursor:pointer;padding:4px 0;text-decoration:underline;margin-top:6px">❓ Jak získat API klíč?</button>
+    </div>
+    <div class="field-group" style="margin-top:14px">
+      <div class="form-label">Model</div>
+      <select id="settings-model" class="form-input" style="font-size:15px">
+        <option value="claude-opus-4-5">claude-opus-4-5 (nejlepší)</option>
+        <option value="claude-sonnet-4-5">claude-sonnet-4-5 (rychlejší)</option>
+        <option value="claude-haiku-4-5-20251001">claude-haiku-4-5 (nejrychlejší)</option>
+      </select>
+    </div>
+    <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--g200)">
+      <button onclick="clearAllData()"
+        style="color:var(--red);font-size:13px;font-weight:700;padding:8px 0">
+        🗑️ Smazat všechna data a výpravy
+      </button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeSettings()">Zavřít</button>
+      <button class="btn-primary" onclick="saveSettings()">Uložit</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+/* ===================================================
+   EXPEDICE CAMPER — TRIP PLANNER
+   © 2025 — Single file PWA
+   =================================================== */
+
+/* ===== CONSTANTS ===== */
+const DEFAULT_PASSWORD = 'expedice2026';
+const SK_PASSWORD = 'expedice_pw';
+const SK_APIKEY   = 'expedice_key';
+const SK_MODEL    = 'expedice_model';
+const SK_TRIPS    = 'expedice_trips';
+const SK_CHECKS   = 'expedice_checks';
+const SK_CUSTOM   = 'expedice_custom';
+const SK_HIDDEN   = 'expedice_hidden';
+const SK_ACTUAL   = 'expedice_actual';
+const SK_PHOTOS   = 'expedice_photos';
+const SK_UNLOCKED = 'expedice_unlocked_ts';
+const SESSION_TTL = 8 * 60 * 60 * 1000; // 8 hours
+
+const JSON_START = '<<<EXPEDICE_JSON>>>';
+const JSON_END   = '<<<EXPEDICE_JSON_END>>>';
+
+const PROGRESS_STEPS = [
+  { icon:'🌍', title:'Analyzuji destinaci',        sub:'Plánuji optimální trasu' },
+  { icon:'🗺️', title:'Navrhuji denní etapy',       sub:'Zohledňuji délku vozidla' },
+  { icon:'⚠️', title:'Kontroluji bezpečnost tras', sub:'Výšky tunelů, ZTL zóny, omezení' },
+  { icon:'🏕️', title:'Hledám kempy na trase',      sub:'Filtruji dle tvých požadavků' },
+  { icon:'⛽', title:'Počítám náklady na palivo',   sub:'Aktuální ceny v dané zemi' },
+  { icon:'✅', title:'Připravuji packing list',    sub:'Přizpůsobeno destinaci a aktivitám' },
+  { icon:'📋', title:'Finalizuji itinerář',        sub:'Skoro hotovo…' },
+];
+
+const BADGE_COLORS = [
+  '#f97316','#2563eb','#16a34a','#7c3aed','#dc2626','#d97706','#0891b2'
+];
+
+/* ===== STATE ===== */
+let state = {
+  view: 'lock',
+  travelerCount: 2,
+  vehicleType: 'minivan',
+  overnightStyle: 'mix',
+  pace: 'vyvážené',
+  fuelType: 'benzin',
+  editingTripId: null,
+  currentTrip: null,
+  generating: false,
+  abortController: null,
+  progressTimer: null,
+};
+
+/* ===== STORAGE HELPERS ===== */
+const db = {
+  get: k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+  set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) { showToast('❌ Chyba ukládání: '+e.message); } },
+  remove: k => localStorage.removeItem(k),
+};
+
+function getTrips() { return db.get(SK_TRIPS) || []; }
+function saveTrips(trips) { db.set(SK_TRIPS, trips); }
+function getApiKey() { return db.get(SK_APIKEY) || ''; }
+function getModel() { return db.get(SK_MODEL) || 'claude-opus-4-5'; }
+function getPassword() { return db.get(SK_PASSWORD) || DEFAULT_PASSWORD; }
+function getChecks() { return db.get(SK_CHECKS) || {}; }
+function saveChecks(c) { db.set(SK_CHECKS, c); }
+function getCustom() { return db.get(SK_CUSTOM) || {}; }
+function saveCustom(c) { db.set(SK_CUSTOM, c); }
+function getHidden() { return db.get(SK_HIDDEN) || {}; }
+function saveHidden(c) { db.set(SK_HIDDEN, c); }
+function getActual() { return db.get(SK_ACTUAL) || {}; }
+function saveActual(c) { db.set(SK_ACTUAL, c); }
+function getPhotos() { return db.get(SK_PHOTOS) || {}; }
+function savePhotos(c) { db.set(SK_PHOTOS, c); }
+
+/* ===== SANITIZE (security: never use innerHTML with user content) ===== */
+function esc(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function setHtml(el, html) { if(el) el.innerHTML = html; }
+function setText(el, txt) { if(el) el.textContent = txt; }
+
+/* ===== TOAST ===== */
+let toastTimer;
+function showToast(msg, dur=2800) {
+  const t = document.getElementById('toast');
+  clearTimeout(toastTimer);
+  t.textContent = msg;
+  t.classList.add('show');
+  toastTimer = setTimeout(() => t.classList.remove('show'), dur);
+}
+
+/* ===== ROUTER ===== */
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+  const el = document.getElementById('view-'+name);
+  if (el) {
+    el.classList.remove('hidden');
+    window.scrollTo(0,0);
+    state.view = name;
+  }
+}
+
+/* ===== LOCK SCREEN ===== */
+function handleUnlock() {
+  const lockApiInput = document.getElementById('lock-api-input');
+  if (lockApiInput && lockApiInput.value.trim().startsWith('sk-ant-')) {
+    db.set(SK_APIKEY, lockApiInput.value.trim());
+  }
+  db.set(SK_UNLOCKED, Date.now());
+  afterUnlock();
+}
+
+function afterUnlock() {
+  const key = getApiKey();
+  if (!key) {
+    showView('setup');
+  } else {
+    showView('library');
+    renderLibrary();
+  }
+}
+
+function isUnlocked() {
+  const ts = db.get(SK_UNLOCKED);
+  return ts && (Date.now() - ts < SESSION_TTL);
+}
+
+/* ===== SETUP ===== */
+function handleSetupSave() {
+  const k = (document.getElementById('setup-key-input')?.value || '').trim();
+  if (!k.startsWith('sk-ant-')) {
+    showToast('⚠️ Klíč musí začínat sk-ant-');
+    return;
+  }
+  db.set(SK_APIKEY, k);
+  showView('library');
+  renderLibrary();
+}
+
+/* ===== LIBRARY ===== */
+function renderLibrary() {
+  const trips = getTrips();
+  const container = document.getElementById('trips-list');
+  if (!container) return;
+
+  if (trips.length === 0) {
+    setHtml(container, `
+      <div class="library-empty">
+        <div class="library-empty-icon">🗺️</div>
+        <p>Zatím žádné výpravy.<br>Naplánuj svůj první trip!</p>
+      </div>
+    `);
+    return;
+  }
+
+  const sorted = [...trips].sort((a,b) => (b.savedAt||0)-(a.savedAt||0));
+  let html = '<div class="library-section-title">Uložené výpravy</div>';
+  sorted.forEach(trip => {
+    const m = trip.data?.meta || {};
+    const d = trip.data?.dny || [];
+    const b = trip.data?.budget_summary || {};
+    const statusLabels = { planovany:'📋 Plánovaný', probiha:'🚀 Probíhající', archivovany:'📦 Archivovaný' };
+    const statusClass = { planovany:'status-planovany', probiha:'status-probiha', archivovany:'status-archivovany' };
+    const st = trip.status || 'planovany';
+    html += `
+      <div class="trip-card">
+        <div class="trip-card-flag">${esc(m.vlajka)||'🌍'}</div>
+        <div class="trip-card-info">
+          <div class="trip-card-name">${esc(m.nazev||trip.name||'Trip')}<span class="trip-status-badge ${statusClass[st]}">${statusLabels[st]}</span></div>
+          <div class="trip-card-meta">${esc(m.od||'')}${m.od&&m.do?' → ':''}${esc(m.do||'')} · ${esc(m.pocet_noci||d.length||'')} nocí</div>
+          <div class="trip-card-stats">
+            <span class="trip-stat-tag">🚐 ${esc(m.celkem_km||'')} km</span>
+            ${b.celkem_czk ? `<span class="trip-stat-tag">💰 ${esc(Math.round(b.celkem_czk))} Kč</span>` : ''}
+            <span class="trip-stat-tag">👥 ${esc(m.pocet_osob||2)} os.</span>
+          </div>
+        </div>
+        <div class="trip-card-actions">
+          <button class="lib-btn lib-btn-edit" onclick="renameTrip('${esc(trip.id)}')">✏️ Přejmenovat</button>
+          <button class="lib-btn lib-btn-delete" onclick="deleteTrip(event,'${esc(trip.id)}')">🗑️ Smazat</button>
+          <button class="trip-open-btn lib-btn lib-btn-open" onclick="openTrip('${esc(trip.id)}')">Otevřít</button>
+        </div>
+      </div>`;
+  });
+  setHtml(container, html);
+}
+
+function openTrip(id) {
+  const trips = getTrips();
+  const trip = trips.find(t => t.id === id);
+  if (!trip) return;
+  state.currentTrip = trip;
+  renderResults(trip.data);
+  showView('results');
+}
+
+function deleteTrip(e, id) {
+  e.stopPropagation();
+  if (!confirm('Smazat tuto výpravu?')) return;
+  const trips = getTrips().filter(t => t.id !== id);
+  saveTrips(trips);
+  renderLibrary();
+  showToast('🗑️ Výprava smazána');
+}
+
+function renameTrip(id) {
+  const trips = getTrips();
+  const trip = trips.find(t => t.id === id);
+  if (!trip) return;
+  const newName = prompt('Nový název výpravy:', trip.name || '');
+  if (newName === null || newName.trim() === '') return;
+  trip.name = newName.trim();
+  saveTrips(trips);
+  renderLibrary();
+}
+
+function getTripStatus(tripId) {
+  const trips = getTrips();
+  const trip = trips.find(t => t.id === tripId);
+  return trip?.status || 'planovany';
+}
+
+function setTripStatus(tripId, status) {
+  const trips = getTrips();
+  const idx = trips.findIndex(t => t.id === tripId);
+  if (idx === -1) return;
+  trips[idx].status = status;
+  saveTrips(trips);
+  if (state.currentTrip?.id === tripId) state.currentTrip.status = status;
+  renderTripActionBar();
+  renderLibrary();
+}
+
+function renderTripActionBar() {
+  const bar = document.getElementById('trip-action-bar');
+  if (!bar || !state.currentTrip?.id) return;
+  const tripId = state.currentTrip.id;
+  const status = getTripStatus(tripId);
+  const labels = { planovany:'📋 Plánovaný', probiha:'🚀 Probíhající', archivovany:'📦 Archivovaný' };
+  const badge = `<span class="trip-status-badge status-${status}">${labels[status]||status}</span>`;
+  let buttons = '';
+  if (status === 'planovany') {
+    buttons = `<button class="trip-action-btn btn-start" onclick="setTripStatus('${esc(tripId)}','probiha')">🚀 Spustit expedici</button>`;
+  } else if (status === 'probiha') {
+    buttons = `<button class="trip-action-btn btn-archive" onclick="if(confirm('Archivovat výpravu? Bude pouze pro čtení.'))setTripStatus('${esc(tripId)}','archivovany')">📦 Archivovat výpravu</button>`;
+  } else if (status === 'archivovany') {
+    buttons = `<button class="trip-action-btn btn-reopen" onclick="setTripStatus('${esc(tripId)}','probiha')">↩ Znovu otevřít</button>`;
+  }
+  setHtml(bar, badge + '<div class="trip-action-bar">' + buttons + '</div>');
+}
+
+/* ===== PLANNER FORM CONTROLS ===== */
+function changeCount(delta) {
+  state.travelerCount = Math.max(1, Math.min(12, state.travelerCount + delta));
+  setText(document.getElementById('traveler-count'), state.travelerCount);
+}
+
+function setVtype(btn) {
+  document.querySelectorAll('.vtype-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.vehicleType = btn.dataset.vtype;
+}
+
+function toggleSvc(btn) { btn.classList.toggle('active'); }
+
+function setFuelType(btn) {
+  document.querySelectorAll('[data-fuel]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.fuelType = btn.dataset.fuel;
+}
+
+function toggleStyle(btn) {
+  btn.classList.toggle('active');
+  const active = document.querySelectorAll('.style-btn.active');
+  if (active.length === 0) btn.classList.add('active');
+}
+
+function toggleChip(chip) { chip.classList.toggle('active'); }
+
+function setPace(chip) {
+  document.querySelectorAll('#pace-chips .chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  state.pace = chip.dataset.pace;
+}
+
+/* ===== COLLECT FORM DATA ===== */
+function collectFormData() {
+  const services = [];
+  document.querySelectorAll('#services-grid .svc-toggle.active').forEach(el => {
+    services.push(el.dataset.svc);
+  });
+  const interests = [];
+  document.querySelectorAll('#interests-chips .chip.active').forEach(el => {
+    interests.push(el.dataset.interest);
+  });
+
+  const styles = Array.from(document.querySelectorAll('.style-btn.active')).map(b => b.dataset.style);
+
+  return {
+    destinace: document.getElementById('f-dest')?.value?.trim() || '',
+    datumOd:   document.getElementById('f-date-from')?.value || '',
+    casOd:     document.getElementById('f-time-from')?.value || '08:00',
+    datumDo:   document.getElementById('f-date-to')?.value || '',
+    casDo:     document.getElementById('f-time-to')?.value || '18:00',
+    pocetOsob: state.travelerCount,
+    typVozidla: state.vehicleType,
+    delka:     parseFloat(document.getElementById('f-delka')?.value) || 6.4,
+    vyska:     parseFloat(document.getElementById('f-vyska')?.value) || 3.0,
+    spotreba:  parseFloat(document.getElementById('f-spotreba')?.value) || 12,
+    sluzby:    services,
+    palivo:    state.fuelType,
+    stylUbytovani: styles.length > 0 ? styles : ['kempy', 'stellplatz'],
+    zajmy:     interests,
+    tempo:     state.pace,
+    odjezdZ:   document.getElementById('f-odjezd')?.value?.trim() || 'Praha',
+    poznamky:  document.getElementById('f-notes')?.value?.trim() || '',
+  };
+}
+
+/* ===== BUILD AI PROMPT ===== */
+function buildPrompt(fd) {
+  const stylMap = { kempy:'organizované kempy', mix:'mix kempů a volného stání', divocina:'volné stání v přírodě' };
+  const vtypeMap = { minivan:'Minivan/Campervan', obytnak:'Obytný automobil (motorhome)', karavan:'Karavan' };
+  const sluzbyText = fd.sluzby.length ? fd.sluzby.join(', ') : 'žádné speciální požadavky';
+  const zajmyText  = fd.zajmy.length  ? fd.zajmy.join(', ')  : 'obecná turistika';
+  const fuelNazev = { benzin:'Benzin', diesel:'Diesel/Nafta', lpg:'LPG', hybrid:'Hybrid' }[fd.palivo] || 'Palivo';
+  const fuelKat   = fd.palivo || 'benzin';
+  const fuelIcon  = { benzin:'⛽', diesel:'🛢️', lpg:'🔵', hybrid:'🔋' }[fd.palivo] || '⛽';
+
+  return `Jsi expert na road tripy v obytném autě po Evropě. Naplánuj kompletní itinerář na základě těchto parametrů:
+
+DESTINACE: ${fd.destinace}
+TERMÍN: ${fd.datumOd} ${fd.casOd} → ${fd.datumDo} ${fd.casDo}
+ODJEZD: ${fd.odjezdZ}
+POČET OSOB: ${fd.pocetOsob}
+TEMPO: ${fd.tempo}
+
+VOZIDLO:
+- Typ: ${vtypeMap[fd.typVozidla]||fd.typVozidla}
+- Délka: ${fd.delka} m
+- Výška: ${fd.vyska} m  ← KRITICKÉ pro výběr tras, tunelů a parkovišť!
+- Spotřeba: ${fd.spotroba||fd.spotreba} l/100km
+- Palivo: ${fuelNazev} ← DŮLEŽITÉ! Používej tento typ paliva v celém itineráři a rozpočtu!
+
+POŽADAVKY NA UBYTOVÁNÍ: ${sluzbyText}
+STYL NOCOVÁNÍ: ${stylMap[fd.stylUbytovani]||fd.stylUbytovani}
+ZÁJMY: ${zajmyText}
+ZVLÁŠTNÍ PŘÁNÍ: ${fd.poznamky||'žádné'}
+
+PŘESNÁ FAKTA O DÁLNIČNÍCH POPLATCÍCH V EVROPĚ (používej POUZE tato data, nevymýšlej):
+- Česko: elektronická dálniční známka (330 Kč/rok nebo 310 Kč/měsíc, do 3,5t)
+- Slovensko: POVINNÁ elektronická dálniční známka (NE zdarma!) — cca 10 € / 10 dní, kategorie D1 do 3,5t nebo D2 nad 3,5t
+- Rakousko: dálniční vinjeta povinná (9,90 € / 10 dní) + extra mýto na horských průsmycích (Brenner, Tauern, Karawanken)
+- Slovinsko: dálniční vinjeta povinná (16,50 € / měsíc)
+- Maďarsko: elektronické mýto povinné (e-matrica, cca 4 900 HUF / 10 dní pro D1)
+- Chorvatsko: mýtné na branách (platba kartou nebo hotovostí), cca 5–15 € za úsek
+- Itálie: mýtné na branách (autostrade), obytná auta kategorie 3 nebo 4 (dražší než osobní)
+- Německo: BEZ dálniční vinjety pro vozidla do 7,5t
+- Švýcarsko: vinjeta povinná (40 CHF/rok, platí pro obytné auto do 3,5t)
+- Francie: mýtné na branách (péages), obytná auta = kategorie 2
+- Španělsko: většina dálnic bez mýta, některé AP s mýtným
+- Polsko: mýtné elektronicky nebo na branách, kategorie 1 do 3,5t
+NIKDY nepiš, že jsou dálnice zdarma, pokud to není výše uvedeno!
+
+POVINNÉ BEZPEČNOSTNÍ KONTROLY — pro každý den:
+1. Zkontroluj výšky všech tunelů a podjezdů na trase → porovnej s výškou vozidla ${fd.vyska}m
+2. Identifikuj ZTL zóny (zákaz vjezdu v Itálii, Chorvatsku, Slovinsku aj.) → navrhni parkoviště
+3. Upozorni na úzké silnice nevhodné pro vozidla délky ${fd.delka}m
+4. Uveď maximální délku stanoviště pro každý kemp (musí být ≥ ${fd.delka}m)
+5. Vypočítej spotřebu paliva (${fuelNazev}) denně: (km/100)×${fd.spotroba||fd.spotreba}l × aktuální cenu ${fuelNazev} v dané zemi (v Kč)
+6. Upozorni na dálniční poplatky specifické pro obytná auta — použij data z přehledu výše!
+
+DÉLKA ETAP: max 350 km/den pro pohodové tempo, 250 km pro relaxační, 400 km pro intenzivní.
+
+Vrať POUZE platný JSON (bez textu před ani po) v tomto formátu:
+${JSON_START}
+{
+  "meta": {
+    "nazev": "krátký poetický název tripu",
+    "zeme": "název země/oblasti",
+    "vlajka": "🇸🇮",
+    "od": "YYYY-MM-DD",
+    "do": "YYYY-MM-DD",
+    "celkem_km": 850,
+    "pocet_noci": 7,
+    "pocet_osob": ${fd.pocetOsob},
+    "perex": "2-3 věty poetického popisu tripu"
+  },
+  "budget_summary": {
+    "celkem_czk": 0,
+    "na_osobu_czk": 0,
+    "polozky": [
+      {"kat":"${fuelKat}","icon":"${fuelIcon}","nazev":"${fuelNazev}","czk":0,"detail":"X km × Xl/100km × X Kč/l"},
+      {"kat":"kempy","icon":"🏕️","nazev":"Kempy","czk":0,"detail":"X nocí × ø Xeur"},
+      {"kat":"jidlo","icon":"🍽️","nazev":"Jídlo","czk":0,"detail":"X os × X dní"},
+      {"kat":"vstupne","icon":"🎟️","nazev":"Vstupné","czk":0,"detail":"konkrétní atrakce"},
+      {"kat":"dalnice","icon":"🛣️","nazev":"Dálnice & vignety","czk":0,"detail":"konkrétní poplatky"}
+    ],
+    "tipy": ["tip na úsporu 1","tip na úsporu 2","tip na úsporu 3"]
+  },
+  "dny": [
+    {
+      "cislo": 1,
+      "datum": "YYYY-MM-DD",
+      "nadpis": "Název dne",
+      "od": "Město",
+      "do": "Město",
+      "km": 0,
+      "cas_jizdy": "Xh Ymin",
+      "info_row": "X km · Xh Ymin · ⛽ Xl · ~X Kč",
+      "warnings": [
+        {"typ": "vyska|ztl|uzka|dalnice", "ikona": "⚠️", "text": "popis varování"}
+      ],
+      "tankovani": "kde a proč tankovat (konkrétní místo, cena)",
+      "nocovani": {
+        "typ": "kemp|divocina|stellplatz",
+        "nazev": "Název kempu nebo místa",
+        "hvezdy": 4,
+        "sluzby_text": "seznam služeb",
+        "max_delka_m": 8,
+        "cena_eur": 35,
+        "cena_czk": 875,
+        "booking_url": "https://...",
+        "camper_note": "konkrétní poznámka pro campervan"
+      },
+      "program": "detailní popis programu dne — aktivity, atrakce, tipy",
+      "camper_tip": "⚠️ konkrétní camper-specifická rada pro tento den",
+      "jidlo": "tip na jídlo nebo restauraci",
+      "pocasi": "očekávané počasí v tomto dni a místě"
+    }
+  ],
+  "prakticke_info": {
+    "text": "platidlo, SIM, rychlosti, důležitá čísla",
+    "dulezite": ["důležitá info 1","důležitá info 2"]
+  },
+  "fraze": [
+    {"cs":"Dobrý den","original":"...","foneticky":"..."},
+    {"cs":"Kde je kemp?","original":"...","foneticky":"..."},
+    {"cs":"Výška podjezdu?","original":"...","foneticky":"..."},
+    {"cs":"Nafta/diesel","original":"...","foneticky":"..."},
+    {"cs":"Kolik to stojí?","original":"...","foneticky":"..."},
+    {"cs":"Záchod/WC","original":"...","foneticky":"..."},
+    {"cs":"Pomoc!","original":"...","foneticky":"..."}
+  ],
+  "checklist": {
+    "technicka": [
+      {"text":"popis kontroly","priorita":"vysoka|stredni|nizka"}
+    ],
+    "dokumenty": [
+      {"text":"dokument nebo rezervace","priorita":"vysoka|stredni|nizka"}
+    ],
+    "vybaveni": [
+      {"text":"věc k zabalení","priorita":"vysoka|stredni|nizka"}
+    ]
+  }
+}
+${JSON_END}`;
+}
+
+/* ===== GENERATION ===== */
+function loadTestTrip() {
+  const fd = collectFormData();
+  const dest = fd.destinace || 'Chorvatsko';
+  const od = fd.odjezdZ || 'Praha';
+  const mockData = {
+    meta: { nazev:'🌊 '+dest+' — testovací výprava', vlajka:'🇭🇷', pocet_dni:7, pocet_noci:6, celkem_km:1840, odjezd_gps:'50.0755,14.4378' },
+    dny: [
+      { cislo:1, od:od, do:'Vídeň', do_gps:'48.2082,16.3738', nadpis:'Den 1 — Přes Vídeň', popis:'Ranní odjezd, krátká zastávka ve Vídni, pokračujeme do Grazu.', aktivity:[{nazev:'Procházka centrem Vídně',typ:'kultura',trvani:'2h',cena_czk:0}], nocovani:{nazev:'Camping Graz-West',typ:'kemp',cena_czk:650,gps:'47.0707,15.4395'} },
+      { cislo:2, od:'Vídeň', do:'Graz', do_gps:'47.0707,15.4395', nadpis:'Den 2 — Graz', popis:'Historické centrum, výstup na Schlossberg.', aktivity:[{nazev:'Schlossberg',typ:'turistika',trvani:'2h',cena_czk:0}], nocovani:{nazev:'Camping Graz-West',typ:'kemp',cena_czk:650,gps:'47.0707,15.4395'} },
+      { cislo:3, od:'Graz', do:'Split', do_gps:'43.5081,16.4402', nadpis:'Den 3 — Na moře', popis:'Přejezd přes Slovinsko. Zastávka u Plitvických jezer.', aktivity:[{nazev:'NP Plitvická jezera',typ:'turistika',trvani:'3h',cena_czk:850}], nocovani:{nazev:'Stellplatz Split Marina',typ:'stellplatz',cena_czk:480,gps:'43.5100,16.4350'} },
+      { cislo:4, od:'Split', do:'Dubrovník', do_gps:'42.6507,18.0944', nadpis:'Den 4 — Dubrovník', popis:'Diokleciánův palác, odpoledne Dubrovník. Procházka hradbami.', aktivity:[{nazev:'Hradby Dubrovníku',typ:'kultura',trvani:'2h',cena_czk:680}], nocovani:{nazev:'Camp Solitudo',typ:'kemp',cena_czk:920,gps:'42.6600,18.0800'} },
+      { cislo:5, od:'Dubrovník', do:'Split', do_gps:'43.5081,16.4402', nadpis:'Den 5 — Relax', popis:'Volný den, pláž, šnorchlování.', aktivity:[{nazev:'Pláž Zlatni Rat',typ:'sport',trvani:'4h',cena_czk:0}], nocovani:{nazev:'Stellplatz u přístavu',typ:'stellplatz',cena_czk:350,gps:'43.5081,16.4402'} },
+      { cislo:6, od:'Split', do:'Záhřeb', do_gps:'45.8150,15.9819', nadpis:'Den 6 — Záhřeb', popis:'Poslední ráno u moře, přejezd do Záhřebu.', aktivity:[{nazev:'Horní Město Záhřeb',typ:'kultura',trvani:'2h',cena_czk:0}], nocovani:{nazev:'Camp Zagreb',typ:'kemp',cena_czk:580,gps:'45.8000,15.9700'} },
+      { cislo:7, od:'Záhřeb', do:od, do_gps:'50.0755,14.4378', nadpis:'Den 7 — Návrat', popis:'Ranní odjezd ze Záhřebu, odpoledne doma.', aktivity:[], nocovani:null },
+    ],
+    budget_summary: {
+      celkem_czk:28400, na_osobu_czk:14200,
+      polozky:[
+        {kat:'nafta',icon:'⛽',nazev:'Palivo',czk:8200,detail:'~1840 km'},
+        {kat:'kempy',icon:'🏕️',nazev:'Ubytování',czk:9200,detail:'6 nocí'},
+        {kat:'jidlo',icon:'🍽️',nazev:'Jídlo',czk:6400,detail:'Restaurace + nákupy'},
+        {kat:'vstupne',icon:'🎫',nazev:'Vstupné',czk:2600,detail:'Plitvice, hradby'},
+        {kat:'dalnice',icon:'🛣️',nazev:'Dálniční známky',czk:2000,detail:'SI, HR'},
+      ],
+    },
+    checklist: {
+      technicka:[{text:'Zkontrolovat tlak v pneumatikách',priorita:'vysoka'},{text:'Dálniční známky AT, SI, HR',priorita:'vysoka'},{text:'Záchranný trojúhelník a lékárnička',priorita:'vysoka'}],
+      dokumenty:[{text:'Pas nebo OP',priorita:'vysoka'},{text:'Zelená karta pojištění',priorita:'vysoka'},{text:'Cestovní pojištění',priorita:'stredni'}],
+      vybaveni:[{text:'Spacáky a polštáře',priorita:'vysoka'},{text:'Kempinkové vařiče + plyn',priorita:'vysoka'},{text:'Plážové vybavení',priorita:'stredni'},{text:'Sluneční krém SPF 50+',priorita:'nizka'}],
+    },
+    prakticke_info:{text:'Chorvatsko je v Schengenu od 2023, platí se eurem. Rezervujte kempy předem v létě.',dulezite:['Povinné svítit celý rok','Lékárnička a trojúhelník povinné']},
+    frazovnik:[],
+  };
+  state.currentTrip = { id:'trip_test_'+Date.now(), name:mockData.meta.nazev, savedAt:null, formData:{...fd,destinace:dest,odjezdZ:od}, data:mockData };
+  renderResults(mockData);
+  showView('results');
+  showToast('🧪 Testovací trip načten — API nebylo voláno');
+}
+
+async function startGeneration() {
+  const fd = collectFormData();
+  if (!fd.destinace) { showToast('⚠️ Zadej prosím cílovou destinaci'); return; }
+  if (!fd.datumOd)   { showToast('⚠️ Zadej datum odjezdu'); return; }
+  if (!fd.datumDo)   { showToast('⚠️ Zadej datum návratu'); return; }
+
+  const apiKey = getApiKey();
+  if (!apiKey) { showToast('⚠️ Nastav API klíč v nastavení'); return; }
+
+  state.generating = true;
+  state.abortController = new AbortController();
+  state.currentTrip = null;
+
+  setText(document.getElementById('loading-dest'), fd.destinace);
+  setText(document.getElementById('loading-sub'), 'AI pracuje — obvykle trvá 20–40 sekund…');
+  showView('loading');
+  startProgressAnimation();
+
+  try {
+    const tripData = await generateTrip(fd, apiKey);
+    clearProgressTimer();
+    state.currentTrip = {
+      id: 'trip_' + Date.now(),
+      name: tripData.meta?.nazev || fd.destinace,
+      savedAt: null,
+      formData: fd,
+      data: tripData,
+    };
+    renderResults(tripData);
+    showView('results');
+    // Auto-save
+    autoSaveTrip();
+    // Update km with real OSRM road distances (async, updates in background)
+    updateRealDistances(tripData);
+  } catch(err) {
+    clearProgressTimer();
+    if (err.name === 'AbortError') {
+      showView('planner');
+      showToast('Generování zrušeno');
+    } else {
+      showView('planner');
+      showToast('❌ Chyba: ' + (err.message||'Neznámá chyba'), 4000);
+      console.error('[Expedice] Generation error:', err);
+    }
+  } finally {
+    state.generating = false;
+  }
+}
+
+function cancelGeneration() {
+  if (state.abortController) state.abortController.abort();
+  clearProgressTimer();
+  state.generating = false;
+}
+
+/* ===== PROGRESS ANIMATION ===== */
+let progressStep = 0;
+function startProgressAnimation() {
+  progressStep = 0;
+  renderProgressSteps(0);
+  let step = 0;
+  state.progressTimer = setInterval(() => {
+    step++;
+    if (step < PROGRESS_STEPS.length) {
+      progressStep = step;
+      renderProgressSteps(step);
+    }
+  }, 4000);
+}
+
+function clearProgressTimer() {
+  if (state.progressTimer) { clearInterval(state.progressTimer); state.progressTimer = null; }
+}
+
+function renderProgressSteps(active) {
+  const container = document.getElementById('progress-list');
+  if (!container) return;
+  let html = '';
+  PROGRESS_STEPS.forEach((s, i) => {
+    const done   = i < active;
+    const act    = i === active;
+    const wait   = i > active;
+    html += `<div class="progress-step ${act?'step-active':''}">
+      <div class="step-icon ${done?'done':act?'active':'wait'}">${done?'✓':s.icon}</div>
+      <div class="step-text">
+        <div class="step-title">${esc(s.title)}</div>
+        ${act||done?`<div class="step-sub">${esc(s.sub)}</div>`:''}
+      </div>
+      ${done?'<span class="step-badge badge-done">✓</span>':act?'<span class="step-badge badge-active">…</span>':''}
+    </div>`;
+  });
+  setHtml(container, html);
+}
+
+/* ===== API CALL ===== */
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+async function generateTrip(fd, apiKey) {
+  const prompt = buildPrompt(fd);
+  const body = JSON.stringify({
+    model: getModel(),
+    max_tokens: 8000,
+    stream: !isIOS,
+    messages: [{ role:'user', content: prompt }],
+  });
+  const headers = {
+    'Content-Type': 'application/json',
+    'x-api-key': apiKey,
+    'anthropic-version': '2023-06-01',
+    'anthropic-dangerous-direct-browser-access': 'true',
+  };
+
+  if (isIOS) {
+    // iOS Safari: non-streaming fallback
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST', headers,
+      body: JSON.stringify({ model:getModel(), max_tokens:8000, stream:false,
+        messages:[{role:'user',content:prompt}] }),
+      signal: state.abortController?.signal,
+    });
+    if (!res.ok) {
+      const e = await res.json().catch(()=>({}));
+      throw new Error(e.error?.message || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    const text = data.content?.[0]?.text || '';
+    return extractJSON(text);
+  }
+
+  // Streaming
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST', headers, body,
+    signal: state.abortController?.signal,
+  });
+  if (!res.ok) {
+    const e = await res.json().catch(()=>({}));
+    throw new Error(e.error?.message || `HTTP ${res.status}`);
+  }
+
+  const reader = res.body.getReader();
+  const dec = new TextDecoder();
+  let buf = '';
+  let jbuf = '';
+  let jStarted = false;
+
+  while(true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream:true });
+    const lines = buf.split('\n');
+    buf = lines.pop();
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue;
+      const raw = line.slice(6).trim();
+      if (raw === '[DONE]') continue;
+      let parsed;
+      try { parsed = JSON.parse(raw); } catch { continue; }
+      if (parsed.type === 'content_block_delta' && parsed.delta?.type === 'text_delta') {
+        const chunk = parsed.delta.text || '';
+        if (!jStarted) {
+          jbuf += chunk;
+          const idx = jbuf.indexOf(JSON_START);
+          if (idx !== -1) {
+            jStarted = true;
+            jbuf = jbuf.slice(idx + JSON_START.length);
+          } else if (jbuf.length > 200) {
+            jbuf = jbuf.slice(-100);
+          }
+        } else {
+          jbuf += chunk;
+        }
+      }
+    }
+  }
+  return extractJSON(jbuf);
+}
+
+function extractJSON(raw) {
+  // Try to find JSON between markers
+  const endIdx = raw.indexOf(JSON_END);
+  const jsonStr = endIdx !== -1 ? raw.slice(0, endIdx).trim() : raw.trim();
+
+  // Try direct parse
+  try { return JSON.parse(jsonStr); } catch {}
+
+  // Try finding first { last }
+  const first = jsonStr.indexOf('{');
+  const last  = jsonStr.lastIndexOf('}');
+  if (first !== -1 && last > first) {
+    try { return JSON.parse(jsonStr.slice(first, last+1)); } catch {}
+  }
+
+  throw new Error('AI vrátilo neplatný formát. Zkus to znovu.');
+}
+
+/* ===== SAVE / LOAD TRIPS ===== */
+function autoSaveTrip() {
+  if (!state.currentTrip) return;
+  const trip = { ...state.currentTrip, savedAt: Date.now() };
+  state.currentTrip = trip;
+  const trips = getTrips().filter(t => t.id !== trip.id);
+  if (trips.length >= 20) trips.pop(); // keep max 20
+  trips.unshift(trip);
+  saveTrips(trips);
+  updateSaveBtn(true);
+}
+
+function saveCurrentTrip() {
+  if (!state.currentTrip?.data) return;
+  autoSaveTrip();
+  showToast('💾 Výprava uložena!');
+}
+
+function backFromResults() {
+  showView('library');
+  renderLibrary();
+}
+
+function updateSaveBtn(saved) {
+  const btn = document.getElementById('save-btn');
+  if (btn) btn.textContent = saved ? '✅' : '💾';
+}
+
+/* ===== RENDER RESULTS ===== */
+function renderTripHeader(data) {
+  const m = data.meta || {};
+  const statsHtml = `
+    <div class="results-stats">
+      <div class="results-stat">
+        <div class="results-stat-val">${esc(m.celkem_km||'?')}</div>
+        <div class="results-stat-key">km celkem</div>
+      </div>
+      <div class="results-stat">
+        <div class="results-stat-val">${esc(m.pocet_noci||'?')}</div>
+        <div class="results-stat-key">nocí</div>
+      </div>
+      <div class="results-stat">
+        <div class="results-stat-val">${data.budget_summary?.celkem_czk ? Math.round(data.budget_summary.celkem_czk).toLocaleString('cs-CZ')+'<span style="font-size:14px;"> Kč</span>' : '?'}</div>
+        <div class="results-stat-key">celkem</div>
+        ${data.budget_summary?.na_osobu_czk ? `<div class="results-stat-pp">${Math.round(data.budget_summary.na_osobu_czk).toLocaleString('cs-CZ')} Kč / os.</div>` : ''}
+      </div>
+    </div>`;
+  setHtml(document.getElementById('results-header-card'), `
+    <div class="results-dest">${esc(m.vlajka||'🌍')} ${esc(m.nazev||m.zeme||'')}</div>
+    <div class="results-meta">${esc(m.od||'')}${m.od&&m.do?' → ':''}${esc(m.do||'')} · ${esc(m.pocet_osob||2)} os. · 🚐 obytňák</div>
+    ${statsHtml}
+    ${m.perex ? `<div class="results-perex">${esc(m.perex)}</div>` : ''}
+  `);
+  setText(document.getElementById('results-title'), m.zeme || m.nazev || 'Itinerář');
+}
+
+function renderResults(data) {
+  if (!data) return;
+
+  renderTripHeader(data);
+
+  // Reset tabs
+  switchTabSilent('days');
+
+  // Day cards
+  renderDaysWithPhotos(data.dny || []);
+  renderBudget(data.budget_summary);
+  renderChecklist(data.checklist);
+  renderPhrases(data);
+  renderTripMap(data);
+  renderTripActionBar();
+}
+
+function switchTab(name, btn) {
+  ['days','budget','check','phrases','chat'].forEach(t => {
+    document.getElementById('tab-'+t)?.classList.add('hidden');
+  });
+  document.getElementById('tab-'+name)?.classList.remove('hidden');
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  if (name === 'chat') initChatTab();
+}
+
+function switchTabSilent(name) {
+  ['days','budget','check','phrases','chat'].forEach(t => {
+    const el = document.getElementById('tab-'+t);
+    if (el) el.classList.toggle('hidden', t !== name);
+  });
+  document.querySelectorAll('.tab-btn').forEach((b,i) => {
+    b.classList.toggle('active', ['days','budget','check','phrases','chat'][i] === name);
+  });
+}
+
+/* ===== DAY CARDS ===== */
+function renderDays(days) {
+  const container = document.getElementById('tab-days');
+  if (!container) return;
+  if (!days.length) { setHtml(container,'<p style="color:var(--g500);text-align:center;padding:32px">Žádné dny k zobrazení.</p>'); return; }
+  let html = '';
+  days.forEach((day, idx) => {
+    const color = BADGE_COLORS[idx % BADGE_COLORS.length];
+    const hasWarnings = day.warnings && day.warnings.length > 0;
+    const campType = day.nocovani?.typ || 'kemp';
+    const campLabel = campType==='divocina' ? '🌲 Divočina' : campType==='stellplatz' ? '🅿️ Stellplatz' : `⛺ ${esc(day.nocovani?.nazev?.split(' ')[0]||'Kemp')}`;
+
+    html += `<div class="day-card" id="day-card-${idx}">
+      <div class="day-card-header" onclick="toggleDay(${idx})">
+        <div class="day-badge" style="background:${color}">
+          <div class="day-badge-label">DEN</div>
+          <div class="day-badge-num">${day.cislo||idx+1}</div>
+        </div>
+        <div class="day-header-info">
+          <div class="day-title">${esc(day.nadpis||'Den '+(idx+1))}</div>
+          <div class="day-route">${esc(day.od||'')}${day.od&&day.do?' → ':''}${esc(day.do||'')} · ${esc(day.datum||'')}</div>
+        </div>
+        <div class="day-chips">
+          ${day.km ? `<span class="dchip dchip-km">${esc(day.km)} km</span>` : ''}
+          <span class="dchip dchip-camp">${campLabel}</span>
+          ${hasWarnings ? '<span class="dchip dchip-warn">⚠️</span>' : ''}
+        </div>
+        <span class="day-chevron">▼</span>
+      </div>
+      <div class="day-body">
+        ${renderDayBody(day)}
+      </div>
+    </div>`;
+  });
+  setHtml(container, html);
+  // Open first day
+  setTimeout(() => toggleDay(0), 100);
+}
+
+function toggleDay(idx) {
+  const card = document.getElementById('day-card-'+idx);
+  if (card) card.classList.toggle('open');
+}
+
+function renderDayBody(day) {
+  let html = '';
+
+  // Route info card
+  if (day.info_row || day.km) {
+    html += `<div class="info-card info-card-route">
+      <div class="info-card-hdr info-card-hdr-route">🛣️ Trasa</div>
+      <div class="info-card-body">
+        <strong>${esc(day.info_row||day.km+' km · '+day.cas_jizdy)}</strong>
+        ${day.tankovani ? '<br><br>⛽ '+esc(day.tankovani) : ''}
+      </div>
+    </div>`;
+  }
+
+  // Warnings
+  if (day.warnings && day.warnings.length > 0) {
+    day.warnings.forEach(w => {
+      html += `<div class="info-card info-card-warning">
+        <div class="info-card-hdr info-card-hdr-warning">${esc(w.ikona||'⚠️')} ${esc(w.typ==='ztl'?'ZTL Zóna':w.typ==='vyska'?'Výškové omezení':w.typ==='uzka'?'Úzká silnice':'Upozornění')}</div>
+        <div class="info-card-body">${esc(w.text)}</div>
+      </div>`;
+    });
+  }
+
+  // Overnight
+  if (day.nocovani) {
+    const n = day.nocovani;
+    const isWild = n.typ === 'divocina';
+    html += `<div class="info-card info-card-camp">
+      <div class="info-card-hdr info-card-hdr-camp">🏕️ Nocování</div>
+      <div class="info-card-body">
+        <strong>${esc(n.nazev||'')}</strong>${n.hvezdy?(' '+'★'.repeat(n.hvezdy)):''}
+        ${n.sluzby_text ? '<br>'+esc(n.sluzby_text) : ''}
+        ${n.max_delka_m ? `<br>Max. délka stanoviště: <strong>${esc(n.max_delka_m)} m</strong>` : ''}
+        ${isWild ? '' : (n.cena_eur ? `<br>Cena: <strong>${esc(n.cena_eur)} € / noc</strong>${n.cena_czk?' (~'+Math.round(n.cena_czk)+' Kč)':''}` : '')}
+        ${n.camper_note ? '<br><em>'+esc(n.camper_note)+'</em>' : ''}
+        ${n.booking_url && n.booking_url !== 'https://...' ?
+          `<a class="booking-link" href="${esc(n.booking_url)}" target="_blank" rel="noopener">🔗 Rezervace</a>` : ''}
+      </div>
+    </div>`;
+  }
+
+  // Program
+  if (day.program) {
+    html += `<div class="info-card info-card-program">
+      <div class="info-card-hdr info-card-hdr-program">📍 Program</div>
+      <div class="info-card-body">${esc(day.program)}</div>
+    </div>`;
+  }
+
+  // Camper tip
+  if (day.camper_tip) {
+    html += `<div class="info-card info-card-tip">
+      <div class="info-card-hdr info-card-hdr-tip">💡 Camper tip</div>
+      <div class="info-card-body">${esc(day.camper_tip)}</div>
+    </div>`;
+  }
+
+  // Food
+  if (day.jidlo) {
+    html += `<div class="info-card info-card-food">
+      <div class="info-card-hdr info-card-hdr-food">🍽️ Jídlo</div>
+      <div class="info-card-body">${esc(day.jidlo)}</div>
+    </div>`;
+  }
+
+  // Weather
+  if (day.pocasi) {
+    html += `<div class="info-card info-card-weather">
+      <div class="info-card-hdr info-card-hdr-weather">🌤️ Počasí</div>
+      <div class="info-card-body">${esc(day.pocasi)}</div>
+    </div>`;
+  }
+
+  // Google Maps link
+  if (day.od && day.do) {
+    const mapsUrl = 'https://www.google.com/maps/dir/?api=1&amp;origin=' + encodeURIComponent(day.od) + '&amp;destination=' + encodeURIComponent(day.do) + '&amp;travelmode=driving';
+    html += `<div style="text-align:center;margin-top:12px">
+      <a href="${mapsUrl}" target="_blank" rel="noopener"
+         style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--blue);text-decoration:underline">
+        🗺️ Otevřít trasu v Mapách
+      </a>
+      <div style="font-size:10px;color:var(--g400);margin-top:4px">Km v Mapách se může lišit od odhadu AI</div>
+    </div>`;
+  }
+
+  return html;
+}
+
+function renderDaysWithPhotos(days) {
+  const container = document.getElementById('tab-days');
+  if (!container) return;
+  if (!days.length) { setHtml(container,'<p style="color:var(--g500);text-align:center;padding:32px">Žádné dny k zobrazení.</p>'); return; }
+  let html = '';
+  days.forEach((day, idx) => {
+    const color = BADGE_COLORS[idx % BADGE_COLORS.length];
+    const hasWarnings = day.warnings && day.warnings.length > 0;
+    const campType = day.nocovani?.typ || 'kemp';
+    const campLabel = campType==='divocina' ? '🌲 Divočina' : campType==='stellplatz' ? '🅿️ Stellplatz' : `⛺ ${esc(day.nocovani?.nazev?.split(' ')[0]||'Kemp')}`;
+
+    html += `<div class="day-card" id="day-card-${idx}">
+      <div class="day-card-header" onclick="toggleDay(${idx})">
+        <div class="day-badge" style="background:${color}">
+          <div class="day-badge-label">DEN</div>
+          <div class="day-badge-num">${day.cislo||idx+1}</div>
+        </div>
+        <div class="day-header-info">
+          <div class="day-title">${esc(day.nadpis||'Den '+(idx+1))}</div>
+          <div class="day-route">${esc(day.od||'')}${day.od&&day.do?' → ':''}${esc(day.do||'')} · ${esc(day.datum||'')}</div>
+        </div>
+        <div class="day-chips">
+          ${day.km ? `<span class="dchip dchip-km">${esc(day.km)} km</span>` : ''}
+          <span class="dchip dchip-camp">${campLabel}</span>
+          ${hasWarnings ? '<span class="dchip dchip-warn">⚠️</span>' : ''}
+        </div>
+        <span class="day-chevron">▼</span>
+      </div>
+      <div class="day-body">
+        ${renderDayBody(day)}
+        <div id="day-photos-${idx}"></div>
+      </div>
+    </div>`;
+  });
+  setHtml(container, html);
+  // Initialize photo sections for each day
+  days.forEach((day, idx) => {
+    const wrap = document.getElementById('day-photos-' + idx);
+    if (wrap) renderDayPhotos(idx, wrap);
+  });
+  // Open first day
+  setTimeout(() => toggleDay(0), 100);
+}
+
+/* ===== BUDGET ===== */
+function renderBudget(b) {
+  const container = document.getElementById('tab-budget');
+  if (!container || !b) return;
+
+  const tripId = state.currentTrip?.id || 'tmp';
+  const actualData = getActual()[tripId] || {};
+  const maxCzk = Math.max(...(b.polozky||[]).map(p=>p.czk||0), 1);
+  const barColors = { nafta:'#f97316', benzin:'#f97316', diesel:'#f97316', lpg:'#3b82f6', hybrid:'#16a34a', kempy:'#16a34a', jidlo:'#2563eb', vstupne:'#7c3aed', dalnice:'#d97706', ostatni:'#64748b' };
+
+  let totalActual = 0;
+  let anyActual = false;
+  (b.polozky||[]).forEach(p => {
+    const v = parseFloat(actualData[p.kat||p.nazev]);
+    if (!isNaN(v)) { totalActual += v; anyActual = true; }
+  });
+
+  const estimated = b.celkem_czk || 0;
+  const diff = anyActual ? (totalActual - estimated) : null;
+  const diffHtml = diff !== null
+    ? `<div class="budget-summary-actual">Skutečně: <b>${Math.round(totalActual).toLocaleString('cs-CZ')} Kč</b> <span class="${diff > 0 ? 'budget-diff-over' : 'budget-diff-under'}">(${diff > 0 ? '+' : ''}${Math.round(diff).toLocaleString('cs-CZ')} Kč)</span></div>`
+    : '';
+
+  let rowsHtml = (b.polozky||[]).map(p => {
+    const pct = Math.round((p.czk||0) / maxCzk * 100);
+    const col = barColors[p.kat] || '#64748b';
+    const key = p.kat || p.nazev;
+    const actualVal = actualData[key] !== undefined ? actualData[key] : '';
+    return `<div class="budget-row">
+      <div class="budget-icon">${esc(p.icon||'💰')}</div>
+      <div class="budget-info">
+        <div class="budget-cat">${esc(p.nazev)}</div>
+        <div class="budget-det">${esc(p.detail||'')}</div>
+        <div class="budget-bar-wrap"><div class="budget-bar" style="width:${pct}%;background:${col}"></div></div>
+        <div class="budget-actual-row">
+          <span class="budget-actual-label">Skutečně:</span>
+          <input type="number" class="budget-actual-input" placeholder="Zadej Kč…"
+            value="${esc(String(actualVal))}"
+            onblur="saveActualCost('${esc(tripId)}','${esc(key)}',this.value)"
+            onkeydown="if(event.key==='Enter'){this.blur();}">
+          <span class="budget-actual-label">Kč</span>
+          ${actualVal !== '' ? `<span class="budget-actual-saved">✓</span>` : ''}
+        </div>
+      </div>
+      <div class="budget-amount">${esc(Math.round(p.czk||0))} Kč</div>
+    </div>`;
+  }).join('');
+
+  let savingsHtml = '';
+  if (b.tipy && b.tipy.length) {
+    savingsHtml = `<div class="savings-card">
+      <div class="savings-title">💡 Tipy na úspory</div>
+      ${b.tipy.map(t=>`<div class="saving-item">• ${esc(t)}</div>`).join('')}
+    </div>`;
+  }
+
+  setHtml(container, `
+    <div class="budget-total">
+      <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Celkový odhadovaný rozpočet</div>
+      <div style="font-size:46px;font-weight:900;color:#f97316;line-height:1">${b.celkem_czk ? Math.round(b.celkem_czk).toLocaleString('cs-CZ') : '?'} <span style="font-size:24px">Kč</span></div>
+      ${b.na_osobu_czk ? `<div style="font-size:14px;color:rgba(255,255,255,.55);margin-top:6px">${Math.round(b.na_osobu_czk).toLocaleString('cs-CZ')} Kč / osobu</div>` : ''}
+      ${diffHtml}
+    </div>
+    <div class="budget-rows">${rowsHtml}</div>
+    ${savingsHtml}
+    <div style="text-align:center;margin-top:16px;font-size:12px;color:var(--g400)">
+      Ceny jsou orientační odhady. Zadej skutečné náklady výše pro sledování výdajů.
+    </div>
+  `);
+}
+
+function saveActualCost(tripId, key, value) {
+  const all = getActual();
+  if (!all[tripId]) all[tripId] = {};
+  if (value === '' || value === null) {
+    delete all[tripId][key];
+  } else {
+    all[tripId][key] = parseFloat(value) || 0;
+  }
+  saveActual(all);
+  // Re-render to update totals
+  const trip = state.currentTrip?.data;
+  if (trip) renderBudget(trip.budget_summary);
+}
+
+/* ===== TRIP MAP ===== */
+let leafletLoaded = false;
+let tripMapInstance = null;
+
+function parseGPS(str) {
+  if (!str) return null;
+  const parts = String(str).split(',').map(s => parseFloat(s.trim()));
+  if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) return [parts[0], parts[1]];
+  return null;
+}
+
+async function loadLeaflet() {
+  if (leafletLoaded) return;
+  await new Promise((resolve, reject) => {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    document.head.appendChild(link);
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    script.onload = resolve;
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+  leafletLoaded = true;
+}
+
+/* ===== OSRM REAL DISTANCES ===== */
+async function updateRealDistances(data) {
+  try {
+    const meta = data.meta || {};
+    const days = data.dny || [];
+    const depGPS = parseGPS(meta.odjezd_gps);
+    if (!depGPS) return;
+
+    // Build ordered waypoints and mapping: which day index arrives at each waypoint
+    const waypoints = [depGPS];
+    const arrivalDayIdx = [-1]; // -1 = home departure
+    days.forEach((day, idx) => {
+      const gps = parseGPS(day.do_gps) || parseGPS(day.nocovani?.gps);
+      if (gps) { waypoints.push(gps); arrivalDayIdx.push(idx); }
+    });
+    if (waypoints.length < 2) return;
+
+    // Add return home as final waypoint (for last-day km)
+    waypoints.push(depGPS);
+    arrivalDayIdx.push(-2); // -2 = home return
+
+    const coords = waypoints.map(p => `${p[1]},${p[0]}`).join(';');
+    const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=false&steps=false`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(12000) });
+    const json = await res.json();
+    const legs = json.routes?.[0]?.legs;
+    if (!legs) return;
+
+    const fd = state.currentTrip?.formData || {};
+    const spotreba = parseFloat(fd.spotreba) || 8;
+    const fuelNazev = { benzin:'Benzin', diesel:'Diesel', lpg:'LPG', hybrid:'Hybrid' }[fd.palivo] || 'Palivo';
+    let totalKm = 0;
+
+    legs.forEach((leg, legIdx) => {
+      const km = Math.round(leg.distance / 1000);
+      const dMin = Math.round(leg.duration / 60);
+      const h = Math.floor(dMin / 60), m = dMin % 60;
+      const cas = h > 0 ? `${h}h ${m < 10 ? '0' : ''}${m}min` : `${m}min`;
+      const litry = ((km / 100) * spotreba).toFixed(1);
+
+      // legIdx 0 = dep→day[arrivalDayIdx[1]]
+      // legIdx N = last GPS point → home (map to last day with no GPS)
+      const toDayIdx = arrivalDayIdx[legIdx + 1];
+      if (toDayIdx >= 0) {
+        days[toDayIdx].km = km;
+        days[toDayIdx].cas_jizdy = cas;
+        days[toDayIdx].info_row = `${km} km · ${cas} · ⛽ ${litry}l`;
+        totalKm += km;
+      } else if (toDayIdx === -2) {
+        // Return home leg — update the last day if it has no GPS (= return day)
+        const lastDay = days[days.length - 1];
+        if (lastDay && !parseGPS(lastDay.do_gps) && !parseGPS(lastDay.nocovani?.gps)) {
+          lastDay.km = km;
+          lastDay.cas_jizdy = cas;
+          lastDay.info_row = `${km} km · ${cas} · ⛽ ${litry}l`;
+          totalKm += km;
+        }
+      }
+    });
+
+    if (totalKm > 0) data.meta.celkem_km = totalKm;
+
+    // Save updated data
+    if (state.currentTrip) {
+      state.currentTrip.data = data;
+      const trips = getTrips();
+      const idx = trips.findIndex(t => t.id === state.currentTrip.id);
+      if (idx >= 0) { trips[idx].data = data; saveTrips(trips); }
+    }
+
+    // Re-render days and header stats
+    renderDaysWithPhotos(data.dny || []);
+    renderTripHeader(data);
+    showToast('✅ Km aktualizovány dle reálné trasy');
+  } catch(e) {
+    console.warn('[Expedice] OSRM distance update failed:', e);
+  }
+}
+
+async function fetchRoadRoute(waypoints) {
+  try {
+    const coords = waypoints.map(p => `${p[1]},${p[0]}`).join(';');
+    const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson&steps=false`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    const json = await res.json();
+    return json.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+  } catch(e) { return null; }
+}
+
+async function renderTripMap(data) {
+  const wrap = document.getElementById('trip-map-wrap');
+  if (!wrap) return;
+  const meta = data.meta || {};
+  const days = data.dny || [];
+  const labels = [];
+  const points = [];
+  const depGPS = parseGPS(meta.odjezd_gps);
+  if (depGPS) {
+    points.push(depGPS);
+    labels.push({ gps: depGPS, label: state.currentTrip?.formData?.odjezdZ || 'Odjezd', day: 0, isHome: true });
+  }
+  const COLORS = ['#f97316','#3b82f6','#16a34a','#a855f7','#ef4444','#eab308','#06b6d4','#ec4899','#14b8a6','#f59e0b'];
+  days.forEach((day, idx) => {
+    const gps = parseGPS(day.do_gps) || parseGPS(day.nocovani?.gps);
+    if (gps) {
+      points.push(gps);
+      labels.push({ gps, label: day.do || day.nadpis || ('Den '+(day.cislo||idx+1)), day: day.cislo||idx+1, color: COLORS[idx % COLORS.length] });
+    }
+  });
+  if (points.length < 2) { wrap.classList.add('hidden'); return; }
+  wrap.classList.remove('hidden');
+  try { await loadLeaflet(); } catch(e) { wrap.classList.add('hidden'); return; }
+  if (tripMapInstance) { tripMapInstance.remove(); tripMapInstance = null; }
+  document.getElementById('trip-map').innerHTML = '';
+  const map = L.map('trip-map', { zoomControl: true, scrollWheelZoom: false });
+  tripMapInstance = map;
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors', maxZoom: 18 }).addTo(map);
+  labels.forEach((item, idx) => {
+    const size = item.isHome ? 36 : 30;
+    const bg = item.isHome ? '#0a1628' : (item.color || '#f97316');
+    const icon = L.divIcon({
+      className: '',
+      html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${bg};border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;color:white;font-size:${item.isHome?14:11}px;font-weight:700;font-family:-apple-system,sans-serif">${item.isHome ? '🏠' : item.day}</div>`,
+      iconSize: [size, size], iconAnchor: [size/2, size/2],
+    });
+    const prevItem = idx > 0 ? labels[idx - 1] : null;
+    function mapsNavUrl(fromGps, fromName, toGps, toName) {
+      const origin = fromGps ? `${fromGps[0]},${fromGps[1]}` : encodeURIComponent(fromName || '');
+      const dest = toGps ? `${toGps[0]},${toGps[1]}` : encodeURIComponent(toName || '');
+      return 'https://www.google.com/maps/dir/?api=1' + '&amp;origin=' + origin + '&amp;destination=' + dest + '&amp;travelmode=driving';
+    }
+    let popupHtml;
+    if (item.isHome) {
+      const nextItem = labels[1];
+      const mapsUrl = nextItem ? mapsNavUrl(item.gps, item.label, nextItem.gps, nextItem.label) : null;
+      popupHtml = `<div style="font-family:-apple-system,sans-serif;min-width:160px"><div style="font-weight:700;font-size:13px;margin-bottom:6px">🏠 ${esc(item.label)}</div><div style="font-size:11px;color:#64748b;margin-bottom:8px">Místo odjezdu a návratu</div>${mapsUrl ? `<a href="${mapsUrl}" target="_blank" style="display:block;background:#0a1628;color:white;text-align:center;padding:6px 10px;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none">🗺️ Navigovat 1. den</a>` : ''}</div>`;
+    } else {
+      const fromGps = prevItem ? prevItem.gps : null;
+      const fromName = prevItem ? prevItem.label : '';
+      const mapsUrl = mapsNavUrl(fromGps, fromName, item.gps, item.label);
+      popupHtml = `<div style="font-family:-apple-system,sans-serif;min-width:180px"><div style="font-weight:700;font-size:13px;margin-bottom:4px">Den ${item.day} — ${esc(item.label)}</div><div style="font-size:11px;color:#64748b;margin-bottom:8px"><span style="color:#94a3b8">z:</span> ${esc(fromName || '—')}<br><span style="color:#94a3b8">do:</span> <b>${esc(item.label)}</b></div><a href="${mapsUrl}" target="_blank" style="display:block;background:#f97316;color:white;text-align:center;padding:6px 10px;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none">🗺️ Navigovat tuto etapu</a></div>`;
+    }
+    L.marker(item.gps, { icon, zIndexOffset: item.isHome ? 1000 : 500 }).addTo(map).bindPopup(popupHtml, { maxWidth: 240 });
+  });
+  const allRoutePoints = depGPS ? [...points, depGPS] : points;
+  const fallbackLine = points.length > 1 ? L.polyline(allRoutePoints, { color:'#f97316', weight:2, opacity:0.35, dashArray:'5,7' }).addTo(map) : null;
+  map.fitBounds(L.latLngBounds(points).pad(0.15));
+  if (points.length > 1) {
+    let roadCoords = [];
+    if (allRoutePoints.length <= 10) {
+      roadCoords = await fetchRoadRoute(allRoutePoints);
+    } else {
+      for (let i = 0; i < allRoutePoints.length - 1; i++) {
+        const seg = await fetchRoadRoute([allRoutePoints[i], allRoutePoints[i+1]]);
+        if (seg) roadCoords = roadCoords.concat(i === 0 ? seg : seg.slice(1));
+      }
+    }
+    if (roadCoords && roadCoords.length > 1 && fallbackLine) {
+      fallbackLine.remove();
+      L.polyline(roadCoords, { color:'white', weight:5, opacity:0.8 }).addTo(map);
+      L.polyline(roadCoords, { color:'#f97316', weight:3, opacity:0.9 }).addTo(map);
+    }
+  }
+  const legend = document.getElementById('trip-map-legend');
+  if (legend) legend.innerHTML = labels.map(item => `<div class="trip-map-legend-item"><div class="trip-map-legend-dot" style="background:${item.isHome?'#0a1628':item.color}"></div>${esc(item.isHome?'🏠 '+item.label:'Den '+item.day+': '+item.label)}</div>`).join('');
+}
+
+/* ===== AI CHAT ===== */
+let chatHistory = [];
+let chatTripId = null;
+let chatStreaming = false;
+
+function buildChatContext() {
+  const trip = state.currentTrip?.data;
+  if (!trip) return '';
+  const fd = state.currentTrip?.formData || {};
+  const dny = (trip.dny||[]).map((d,i) => `Den ${d.cislo||i+1}: ${d.do||d.nadpis||''} — ${d.popis||''}${d.nocovani?' | Nocleh: '+d.nocovani.nazev:''}`).join('\n');
+  return `Jsi průvodce výpravy. Kontext:\nDestinace: ${fd.destinace||''}\nOdjezd: ${fd.odjezdZ||''}\nDny: ${fd.pocetDni||''}\nOsoby: ${fd.pocetOsob||''}\nRozpočet: ${fd.rozpocet||''} Kč\n\nItinerář:\n${dny}\n\nOdpovídej stručně v češtině.`;
+}
+
+function formatChatMarkdown(text) {
+  return text.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/^[•\-] (.+)$/gm,'<div style="padding-left:12px">• $1</div>').replace(/\n/g,'<br>');
+}
+
+function appendChatMsg(role, text, streaming) {
+  const msgs = document.getElementById('chat-messages');
+  if (!msgs) return null;
+  const div = document.createElement('div');
+  div.className = `chat-msg chat-msg-${role==='user'?'user':'ai'}`;
+  const bubble = document.createElement('div');
+  bubble.className = 'chat-bubble'+(streaming?' chat-typing':'');
+  bubble.innerHTML = formatChatMarkdown(text);
+  div.appendChild(bubble);
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return bubble;
+}
+
+async function sendChatMessage() {
+  if (chatStreaming) return;
+  const input = document.getElementById('chat-input');
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  const tripId = state.currentTrip?.id;
+  if (tripId !== chatTripId) {
+    chatHistory = []; chatTripId = tripId;
+    const ctx = buildChatContext();
+    if (ctx) {
+      chatHistory.push({role:'user',content:ctx});
+      chatHistory.push({role:'assistant',content:'Rozumím, jsem připraven odpovídat na otázky o vaší výpravě.'});
+    }
+  }
+  appendChatMsg('user', text);
+  chatHistory.push({role:'user',content:text});
+  chatStreaming = true;
+  const bubble = appendChatMsg('assistant','…',true);
+  try {
+    const apiKey = getApiKey(), model = getModel();
+    if (!apiKey) {
+      if(bubble) bubble.innerHTML = '⚠️ Nastav API klíč v nastavení ⚙️';
+      chatStreaming = false; return;
+    }
+    let fullText = '';
+    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+    if (isIOS) {
+      const res = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'x-api-key':apiKey,'anthropic-version':'2023-06-01','content-type':'application/json','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model,max_tokens:600,messages:chatHistory})});
+      if (!res.ok) { const err=await res.json(); throw new Error(err.error?.message||res.status); }
+      const json = await res.json();
+      fullText = json.content?.[0]?.text || '';
+    } else {
+      const res = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'x-api-key':apiKey,'anthropic-version':'2023-06-01','content-type':'application/json','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model,max_tokens:600,stream:true,messages:chatHistory})});
+      if (!res.ok) { const err=await res.json(); throw new Error(err.error?.message||res.status); }
+      const reader = res.body.getReader(), dec = new TextDecoder();
+      while(true){const{done,value}=await reader.read();if(done)break;const chunk=dec.decode(value);for(const line of chunk.split('\n')){if(!line.startsWith('data:'))continue;const d=line.slice(5).trim();if(d==='[DONE]')break;try{const ev=JSON.parse(d);if(ev.type==='content_block_delta'&&ev.delta?.text){fullText+=ev.delta.text;if(bubble){bubble.innerHTML=formatChatMarkdown(fullText);bubble.classList.remove('chat-typing');}document.getElementById('chat-messages').scrollTop=999999;}}catch(e2){}}}
+    }
+    if(bubble){bubble.innerHTML=formatChatMarkdown(fullText);bubble.classList.remove('chat-typing');}
+    chatHistory.push({role:'assistant',content:fullText});
+  } catch(e){if(bubble)bubble.innerHTML='❌ Chyba: '+esc(String(e));}
+  chatStreaming = false;
+}
+
+function initChatTab() {
+  const msgs = document.getElementById('chat-messages');
+  if(!msgs||msgs.children.length>0)return;
+  const fd=state.currentTrip?.formData||{};
+  msgs.innerHTML=`<div class="chat-msg chat-msg-ai"><div class="chat-bubble">👋 Ahoj! Jsem tvůj průvodce výpravou do <b>${esc(fd.destinace||'destinace')}</b>. Zeptej se mě na cokoliv!<br><br><b>Návrhy:</b><br>• Jaké jsou nejlepší restaurace?<br>• Kde je nejlepší kemp?<br>• Co dělat při špatném počasí?</div></div>`;
+}
+
+/* ===== PHOTOS ===== */
+function renderDayPhotos(dayIdx, container) {
+  const tripId = state.currentTrip?.id || 'tmp';
+  const key = tripId + '_day_' + dayIdx;
+  const photos = getPhotos()[key] || [];
+  const MAX = 5;
+
+  let html = '<div class="day-photos"><div class="day-photos-title">📷 Fotky z etapy</div><div class="day-photos-grid">';
+  photos.forEach((src, i) => {
+    html += `<div class="day-photo-wrap"><img src="${src}" class="day-photo-thumb" onclick="viewPhoto('${esc(tripId)}',${dayIdx},${i})"><button class="day-photo-del" onclick="deletePhoto('${esc(tripId)}',${dayIdx},${i})">×</button></div>`;
+  });
+  if (photos.length < MAX) {
+    html += `<label class="day-photo-add" title="Přidat fotku"><input type="file" accept="image/*" style="display:none" onchange="addPhoto('${esc(tripId)}',${dayIdx},this)"><span>📷</span><span style="font-size:10px;margin-top:2px">Přidat</span></label>`;
+  }
+  html += '</div></div>';
+  if (container) container.innerHTML = html;
+  return html;
+}
+
+function addPhoto(tripId, dayIdx, input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    // Compress via canvas
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      const MAX_DIM = 800;
+      let w = img.width, h = img.height;
+      if (w > h && w > MAX_DIM) { h = h * MAX_DIM / w; w = MAX_DIM; }
+      else if (h > MAX_DIM) { w = w * MAX_DIM / h; h = MAX_DIM; }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const compressed = canvas.toDataURL('image/jpeg', 0.7);
+      const all = getPhotos();
+      const key = tripId + '_day_' + dayIdx;
+      if (!all[key]) all[key] = [];
+      if (all[key].length >= 5) { showToast('⚠️ Maximum 5 fotek na etapu'); return; }
+      all[key].push(compressed);
+      savePhotos(all);
+      // Re-render day photos
+      const wrap = document.getElementById('day-photos-' + dayIdx);
+      if (wrap) renderDayPhotos(dayIdx, wrap);
+      showToast('📷 Fotka přidána');
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+function deletePhoto(tripId, dayIdx, photoIdx) {
+  if (!confirm('Smazat fotku?')) return;
+  const all = getPhotos();
+  const key = tripId + '_day_' + dayIdx;
+  if (!all[key]) return;
+  all[key].splice(photoIdx, 1);
+  savePhotos(all);
+  const wrap = document.getElementById('day-photos-' + dayIdx);
+  if (wrap) renderDayPhotos(dayIdx, wrap);
+}
+
+function viewPhoto(tripId, dayIdx, photoIdx) {
+  const all = getPhotos();
+  const key = tripId + '_day_' + dayIdx;
+  const src = all[key]?.[photoIdx];
+  if (!src) return;
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer';
+  overlay.innerHTML = `<img src="${src}" style="max-width:95vw;max-height:90vh;border-radius:8px;object-fit:contain">`;
+  overlay.onclick = () => overlay.remove();
+  document.body.appendChild(overlay);
+}
+
+function generateExpeditionBook() {
+  const trip = state.currentTrip;
+  if (!trip) return;
+  const data = trip.data;
+  const fd = trip.formData || {};
+  const photos = getPhotos();
+  const tripId = trip.id;
+
+  let html = `<!DOCTYPE html><html lang="cs"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Expediční kniha — ${esc(data.meta?.nazev||fd.destinace||'Výprava')}</title><style>
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:800px;margin:0 auto;padding:20px;color:#1a1a2e;background:#fff}
+    h1{color:#f97316;font-size:2em;border-bottom:3px solid #f97316;padding-bottom:10px}
+    h2{color:#0a1628;font-size:1.3em;margin-top:30px;border-left:4px solid #f97316;padding-left:12px}
+    .meta{background:#f8fafc;border-radius:12px;padding:16px;margin:20px 0;display:flex;flex-wrap:wrap;gap:16px}
+    .meta-item{text-align:center}.meta-val{font-size:1.4em;font-weight:700;color:#f97316}.meta-key{font-size:11px;color:#64748b;text-transform:uppercase}
+    .day{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin:16px 0;page-break-inside:avoid}
+    .day-header{font-size:1.1em;font-weight:700;color:#0a1628;margin-bottom:8px}
+    .day-desc{color:#475569;line-height:1.7;margin-bottom:12px}
+    .photos{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+    .photos img{width:200px;height:150px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0}
+    .nocovani{background:#f0fdf4;border-radius:8px;padding:10px 14px;margin-top:10px;font-size:13px}
+    @media print{body{max-width:100%}.day{page-break-inside:avoid}}
+  </style></head><body>
+  <h1>${esc(data.meta?.vlajka||'🗺️')} ${esc(data.meta?.nazev||'Expediční kniha')}</h1>
+  <div class="meta">
+    <div class="meta-item"><div class="meta-val">${esc(fd.odjezdZ||'—')}</div><div class="meta-key">Odjezd</div></div>
+    <div class="meta-item"><div class="meta-val">${esc(fd.destinace||'—')}</div><div class="meta-key">Destinace</div></div>
+    <div class="meta-item"><div class="meta-val">${esc(String(data.meta?.pocet_dni||fd.pocetDni||'—'))}</div><div class="meta-key">Dní</div></div>
+    <div class="meta-item"><div class="meta-val">${esc(String(fd.pocetOsob||'—'))}</div><div class="meta-key">Osob</div></div>
+    <div class="meta-item"><div class="meta-val">${data.meta?.celkem_km ? Math.round(data.meta.celkem_km)+' km' : '—'}</div><div class="meta-key">Celkem km</div></div>
+  </div>`;
+
+  (data.dny||[]).forEach((day, idx) => {
+    const dayPhotos = photos[tripId + '_day_' + idx] || [];
+    const photosHtml = dayPhotos.length
+      ? `<div class="photos">${dayPhotos.map(src => `<img src="${src}">`).join('')}</div>`
+      : '';
+    const nocovaniHtml = day.nocovani
+      ? `<div class="nocovani">🏕️ Nocleh: <b>${esc(day.nocovani.nazev||'')}</b> — ${esc(day.nocovani.cena_czk ? day.nocovani.cena_czk+' Kč' : '')}</div>`
+      : '';
+    html += `<div class="day">
+      <div class="day-header">Den ${day.cislo||idx+1} — ${esc(day.do||day.nadpis||'')}</div>
+      <div class="day-desc">${esc(day.popis||'')}</div>
+      ${nocovaniHtml}${photosHtml}
+    </div>`;
+  });
+
+  html += '</body></html>';
+
+  const blob = new Blob([html], {type:'text/html;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'expedice-kniha.html';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('📖 Expediční kniha stažena!');
+}
+
+/* ===== CHECKLIST ===== */
+function renderChecklist(cl) {
+  const container = document.getElementById('tab-check');
+  if (!container) return;
+  const tripId = state.currentTrip?.id || 'tmp';
+  const customAll = getCustom();
+  const hiddenAll = getHidden();
+  const sections = [
+    { key:'technicka', label:'🔧 Technická příprava vozidla', items: cl?.technicka||[] },
+    { key:'dokumenty', label:'📄 Dokumenty & rezervace',     items: cl?.dokumenty||[] },
+    { key:'vybaveni',  label:'🎒 Vybavení & oblečení',       items: cl?.vybaveni||[]  },
+    { key:'vlastni',   label:'✏️ Vlastní seznam',            items: []                },
+  ];
+  let html = '';
+  sections.forEach(sec => {
+    const checksKey = tripId + '_' + sec.key;
+    const savedChecks = getChecks()[checksKey] || [];
+    const customItems = customAll[checksKey] || [];
+    const hiddenSet = new Set(hiddenAll[checksKey] || []);
+    const visibleItems = sec.items.filter((_,i) => !hiddenSet.has(i));
+    const aiCount = sec.items.length;
+    const total = visibleItems.length + customItems.length;
+    const doneCount = visibleItems.filter((_,vi) => {
+      const origIdx = sec.items.indexOf(visibleItems[vi]);
+      return savedChecks[origIdx];
+    }).length + customItems.filter(ci=>ci.done).length;
+    if (aiCount===0 && customItems.length===0 && sec.key!=='vlastni') return;
+    html += `<div class="check-section"><div class="check-section-title">${sec.label}<span class="check-progress-tag">${doneCount}/${total}</span></div>`;
+    sec.items.forEach((item,i) => {
+      if (hiddenSet.has(i)) return;
+      const checked = savedChecks[i]||false;
+      html += `<div class="check-item" style="display:flex;align-items:center;gap:8px">
+        <div style="flex:1;display:flex;align-items:center;gap:10px;cursor:pointer" onclick="toggleCheck('${esc(checksKey)}',${i},${aiCount})">
+          <div class="check-box ${checked?'checked':''}">${checked?'✓':''}</div>
+          <div class="check-text ${checked?'checked':''}">${esc(item.text||item)}</div>
+          <span class="prio-tag prio-${esc(item.priorita||'stredni')}">${esc(item.priorita==='vysoka'?'!':item.priorita==='nizka'?'·':'')}</span>
+        </div>
+        <button class="check-del-btn" onclick="hideAiCheck('${esc(checksKey)}',${i})" title="Odebrat položku">🗑</button>
+      </div>`;
+    });
+    customItems.forEach((ci,i) => {
+      html += `<div class="check-item custom"><div class="check-box ${ci.done?'checked':''}" onclick="toggleCustomCheck('${esc(sec.key)}',${i})">${ci.done?'✓':''}</div><div class="check-text ${ci.done?'checked':''}" onclick="toggleCustomCheck('${esc(sec.key)}',${i})">${esc(ci.text)}</div><button class="check-del-btn" onclick="deleteCustomCheck('${esc(sec.key)}',${i})">🗑</button></div>`;
+    });
+    html += `<div class="check-add-row"><input id="ci-${esc(sec.key)}" type="text" class="check-add-input" placeholder="Přidat vlastní položku…" onkeydown="if(event.key==='Enter')addCustomCheck('${esc(sec.key)}')"><button class="check-add-btn" onclick="addCustomCheck('${esc(sec.key)}')">＋</button></div></div>`;
+  });
+  setHtml(container, html || '<p style="color:var(--g500);text-align:center;padding:32px">Checklist není k dispozici.</p>');
+}
+
+function toggleCheck(key, idx, total) {
+  const all = getChecks();
+  if (!all[key]) all[key] = new Array(total).fill(false);
+  all[key][idx] = !all[key][idx];
+  saveChecks(all);
+  renderChecklist(state.currentTrip?.data?.checklist);
+}
+
+function addCustomCheck(sectionKey) {
+  const tripId = state.currentTrip?.id || 'tmp';
+  const fullKey = tripId + '_' + sectionKey;
+  const input = document.getElementById('ci-' + sectionKey);
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) return;
+  const all = getCustom();
+  if (!all[fullKey]) all[fullKey] = [];
+  all[fullKey].push({ text, done: false });
+  saveCustom(all);
+  input.value = '';
+  renderChecklist(state.currentTrip?.data?.checklist);
+}
+
+function hideAiCheck(checksKey, idx) {
+  const all = getHidden();
+  if (!all[checksKey]) all[checksKey] = [];
+  if (!all[checksKey].includes(idx)) all[checksKey].push(idx);
+  saveHidden(all);
+  renderChecklist(state.currentTrip?.data?.checklist);
+}
+
+function toggleCustomCheck(sectionKey, idx) {
+  const tripId = state.currentTrip?.id || 'tmp';
+  const fullKey = tripId + '_' + sectionKey;
+  const all = getCustom();
+  if (!all[fullKey]?.[idx]) return;
+  all[fullKey][idx].done = !all[fullKey][idx].done;
+  saveCustom(all);
+  renderChecklist(state.currentTrip?.data?.checklist);
+}
+
+function deleteCustomCheck(sectionKey, idx) {
+  const tripId = state.currentTrip?.id || 'tmp';
+  const fullKey = tripId + '_' + sectionKey;
+  const all = getCustom();
+  if (!all[fullKey]) return;
+  all[fullKey].splice(idx, 1);
+  saveCustom(all);
+  renderChecklist(state.currentTrip?.data?.checklist);
+}
+
+/* ===== PHRASES ===== */
+function renderPhrases(data) {
+  const container = document.getElementById('tab-phrases');
+  if (!container) return;
+
+  let html = '';
+  if (data.prakticke_info) {
+    const pi = data.prakticke_info;
+    html += `<div class="prakticky-card">
+      <div class="prakticky-title">ℹ️ Praktické info</div>
+      <div class="prakticky-text">${esc(pi.text||'')}</div>
+      ${pi.dulezite?.length ? pi.dulezite.map(d=>`<div class="dulezite-item">⚠️ ${esc(d)}</div>`).join('') : ''}
+    </div>`;
+  }
+
+  if (data.fraze && data.fraze.length) {
+    html += `<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--g500);margin-bottom:10px">Základní fráze</div>`;
+    data.fraze.forEach((f, i) => {
+      html += `<div class="phrase-row">
+        <div>
+          <div class="phrase-cs">${esc(f.cs)}</div>
+        </div>
+        <div style="flex:1">
+          <div class="phrase-original">${esc(f.original)}</div>
+          <div class="phrase-phonetic">${esc(f.foneticky)}</div>
+        </div>
+        <button class="phrase-play" onclick="speakPhrase('${esc(f.original)}')" title="Přehrát">🔊</button>
+      </div>`;
+    });
+  }
+
+  setHtml(container, html || '<p style="color:var(--g500);text-align:center;padding:32px">Žádné jazykové info.</p>');
+}
+
+function speakPhrase(text) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.rate = 0.85;
+  window.speechSynthesis.speak(utt);
+}
+
+/* ===== SHARE ===== */
+async function shareTrip() {
+  const trip = state.currentTrip;
+  if (!trip?.data?.meta) return;
+  const m = trip.data.meta;
+  const text = `${m.vlajka||''} ${m.nazev||m.zeme} — ${m.celkem_km} km, ${m.pocet_noci} nocí 🚐 Plánováno v Expedice Camper`;
+  if (navigator.share) {
+    try { await navigator.share({ title:'Expedice: '+m.nazev, text }); } catch {}
+  } else {
+    await navigator.clipboard.writeText(text).catch(()=>{});
+    showToast('📋 Zkopírováno do schránky');
+  }
+}
+
+/* ===== SETTINGS ===== */
+function showSettings() {
+  document.getElementById('settings-key').value = getApiKey();
+  document.getElementById('settings-model').value = getModel();
+  document.getElementById('modal-settings').classList.remove('hidden');
+}
+
+function closeSettings() {
+  document.getElementById('modal-settings').classList.add('hidden');
+}
+
+function closeSettingsOnBg(e) {
+  if (e.target === document.getElementById('modal-settings')) closeSettings();
+}
+
+function saveSettings() {
+  const key = (document.getElementById('settings-key')?.value||'').trim();
+  const model = document.getElementById('settings-model')?.value||'claude-opus-4-5';
+  if (key) db.set(SK_APIKEY, key);
+  db.set(SK_MODEL, model);
+  closeSettings();
+  showToast('✅ Nastavení uloženo');
+}
+
+function clearAllData() {
+  if (!confirm('Smazat VŠECHNY výpravy a nastavení? Tato akce je nevratná.')) return;
+  [SK_TRIPS, SK_CHECKS, SK_CUSTOM, SK_HIDDEN, SK_ACTUAL, SK_PHOTOS, SK_UNLOCKED].forEach(k => db.remove(k));
+  closeSettings();
+  renderLibrary();
+  showToast('🗑️ Vše smazáno');
+}
+
+/* ===== PDF EXPORT ===== */
+async function exportPDF() {
+  const trip = state.currentTrip?.data;
+  if (!trip) return;
+  showToast('📄 Generuji PDF…', 5000);
+
+  try {
+    // Load jsPDF lazily
+    if (!window.jspdf) {
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+        s.onload = resolve; s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation:'p', unit:'mm', format:'a4' });
+    const W=210, ML=14, MR=196, CW=MR-ML;
+    let y=20;
+    const m = trip.meta||{};
+    const budget = trip.budget_summary||{};
+
+    // Helpers
+    const fc=(r,g,b)=>doc.setFillColor(r,g,b);
+    const tc=(r,g,b)=>doc.setTextColor(r,g,b);
+    const font=(s,w='normal')=>{doc.setFontSize(s);doc.setFont('helvetica',w)};
+    const nl=(n=6)=>{y+=n};
+    const txt=(t,x,yy,opt)=>doc.text(String(t),x,yy||y,opt);
+    const wrapTxt=(t,maxW)=>doc.splitTextToSize(String(t),maxW);
+    const newPage=()=>{doc.addPage();y=20};
+    const checkPage=(need=20)=>{if(y+need>280){newPage()}};
+
+    // PAGE 1 — Cover
+    fc(10,22,40); doc.rect(0,0,W,297,'F');
+    fc(249,115,22); doc.rect(0,260,W,37,'F');
+    // Title
+    tc(255,255,255); font(28,'bold');
+    const titleLines = wrapTxt(m.nazev||m.zeme||'Trip', CW);
+    titleLines.forEach((l,i)=>txt(l,ML,40+i*12));
+    // Meta
+    font(12,'normal'); tc(180,200,220);
+    txt(`${m.od||''} → ${m.do||''}`, ML, 40+titleLines.length*12+8);
+    txt(`${m.pocet_osob||2} os. · ${m.celkem_km||''} km · ${m.pocet_noci||''} nocí 🚐`, ML, 40+titleLines.length*12+18);
+    // Stats on orange strip
+    font(14,'bold'); tc(255,255,255);
+    txt(`${Math.round(budget.celkem_czk)||''} Kč celkem`, ML, 278);
+    txt(`${Math.round(budget.na_osobu_czk)||''} Kč/os.`, 120, 278);
+    // Perex
+    if (m.perex) {
+      font(11,'italic'); tc(140,170,200);
+      const pl = wrapTxt(m.perex, CW);
+      pl.forEach((l,i)=>txt(l,ML,200+i*7));
+    }
+
+    // PAGE 2 — Itinerary days
+    newPage();
+    (trip.dny||[]).forEach((day,idx) => {
+      checkPage(60);
+      // Day badge
+      const col = BADGE_COLORS[idx%BADGE_COLORS.length];
+      const rgb = hexToRgb(col);
+      if (rgb) { fc(rgb.r,rgb.g,rgb.b); doc.circle(ML+5,y-1,5.5,'F'); }
+      tc(255,255,255); font(9,'bold');
+      txt(String(day.cislo||idx+1),ML+3,y+1.5);
+      // Day title
+      tc(10,22,40); font(13,'bold');
+      txt((day.nadpis||'Den '+(idx+1)), ML+14, y+2);
+      y+=6;
+      tc(100,116,139); font(9,'normal');
+      txt(`${day.od||''}${day.od&&day.do?' → ':''}${day.do||''} · ${day.info_row||day.km+' km'}`, ML+14, y+2);
+      y+=10;
+
+      // Overnight
+      if (day.nocovani?.nazev) {
+        fc(240,253,244); doc.roundedRect(ML,y,CW,16,2,2,'F');
+        tc(22,163,74); font(8,'bold'); txt('🏕️ NOCOVÁNÍ',ML+3,y+5);
+        tc(15,23,42); font(9,'normal');
+        const nl2=wrapTxt(`${day.nocovani.nazev} — ${day.nocovani.sluzby_text||''} · ${day.nocovani.cena_eur?day.nocovani.cena_eur+'€':'zdarma'}`,CW-6);
+        nl2.slice(0,2).forEach((l,i)=>txt(l,ML+3,y+10+i*4));
+        y+=20;
+      }
+
+      // Warnings
+      if (day.warnings?.length) {
+        fc(254,242,242); doc.roundedRect(ML,y,CW,10+day.warnings.length*5,2,2,'F');
+        tc(220,38,38); font(8,'bold'); txt('⚠️ VAROVÁNÍ',ML+3,y+5);
+        tc(55,65,81); font(8,'normal');
+        day.warnings.forEach((w,wi)=>txt(wrapTxt(w.text,CW-6)[0],ML+3,y+10+wi*5));
+        y+=14+day.warnings.length*5;
+      }
+
+      // Program snippet
+      if (day.program) {
+        tc(51,65,85); font(9,'normal');
+        const pl=wrapTxt(day.program,CW).slice(0,3);
+        pl.forEach(l=>{ checkPage(6); txt(l,ML,y); y+=5; });
+      }
+
+      if (day.camper_tip) {
+        checkPage(14);
+        fc(255,247,237); doc.roundedRect(ML,y,CW,12,2,2,'F');
+        tc(217,119,6); font(8,'bold'); txt('💡 CAMPER TIP',ML+3,y+5);
+        tc(55,65,81); font(8,'normal');
+        txt(wrapTxt(day.camper_tip,CW-6)[0],ML+3,y+10);
+        y+=15;
+      }
+      y+=8;
+    });
+
+    // PAGE — Budget
+    checkPage(80);
+    tc(10,22,40); font(16,'bold'); txt('💰 Přehled nákladů',ML,y); y+=10;
+    fc(249,115,22); doc.rect(ML,y,CW,1,'F'); y+=6;
+    (budget.polozky||[]).forEach(p=>{
+      checkPage(10);
+      tc(10,22,40); font(11,'bold'); txt(`${p.icon||''} ${p.nazev}`,ML,y);
+      tc(10,22,40); font(11,'bold'); txt(`${Math.round(p.czk||0)} Kč`,MR,y,{align:'right'});
+      tc(100,116,139); font(9,'normal'); txt(p.detail||'',ML,y+5);
+      y+=13;
+    });
+    y+=4;
+    fc(10,22,40); doc.rect(ML,y,CW,12,'F');
+    tc(249,115,22); font(13,'bold'); txt('CELKEM',ML+4,y+8);
+    tc(255,255,255); font(13,'bold'); txt(`${Math.round(budget.celkem_czk||0)} Kč`,MR-4,y+8,{align:'right'});
+    y+=18;
+    if (budget.na_osobu_czk) {
+      tc(100,116,139); font(9,'normal'); txt(`${Math.round(budget.na_osobu_czk)} Kč na osobu`,ML,y); y+=10;
+    }
+
+    // Save
+    const fname = (m.nazev||m.zeme||'Expedice').replace(/[^a-z0-9]/gi,'_')+'.pdf';
+    doc.save(fname);
+    showToast('✅ PDF staženo!');
+  } catch(err) {
+    console.error('PDF error:', err);
+    showToast('❌ PDF se nepodařilo vygenerovat: '+err.message, 4000);
+  }
+}
+
+function hexToRgb(hex) {
+  const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return r ? { r:parseInt(r[1],16), g:parseInt(r[2],16), b:parseInt(r[3],16) } : null;
+}
+
+/* ===== DEFAULTS: set today / tomorrow ===== */
+function setDefaultDates() {
+  const today = new Date();
+  const next  = new Date(); next.setDate(today.getDate()+7);
+  const fmt = d => d.toISOString().slice(0,10);
+  const fromEl = document.getElementById('f-date-from');
+  const toEl   = document.getElementById('f-date-to');
+  if (fromEl && !fromEl.value) fromEl.value = fmt(today);
+  if (toEl   && !toEl.value)   toEl.value   = fmt(next);
+}
+
+/* ===== PWA ===== */
+function registerSW() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js')
+      .then(()=>console.log('[Expedice] SW registered'))
+      .catch(e=>console.warn('[Expedice] SW failed:', e));
+  }
+}
+
+/* ===== INIT ===== */
+function init() {
+  registerSW();
+  setDefaultDates();
+  if (isUnlocked()) {
+    afterUnlock();
+  } else {
+    showView('lock');
+    setTimeout(()=>document.getElementById('lock-api-input')?.focus(), 300);
+  }
+}
+
+function showApiGuide() { document.getElementById('api-guide-overlay').style.display='block'; document.body.style.overflow='hidden'; }
+function hideApiGuide() { document.getElementById('api-guide-overlay').style.display='none'; document.body.style.overflow=''; }
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+
+<div id="api-guide-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;padding:20px;overflow-y:auto" onclick="if(event.target===this)hideApiGuide()">
+  <div style="background:white;border-radius:20px;max-width:440px;margin:40px auto;padding:28px;font-family:-apple-system,sans-serif">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div style="font-size:18px;font-weight:700;color:#0a1628">🔑 Jak získat API klíč</div>
+      <button onclick="hideApiGuide()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#64748b">×</button>
+    </div>
+    <div style="background:#fef3c7;border-radius:12px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:#92400e">💡 Jeden vygenerovaný trip stojí cca 5–10 Kč. Za $5 (115 Kč) máš desítky tripů.</div>
+    <div style="display:flex;gap:14px;margin-bottom:18px;align-items:flex-start">
+      <div style="width:32px;height:32px;border-radius:50%;background:#f97316;color:white;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">1</div>
+      <div><div style="font-weight:700;font-size:14px;color:#0a1628;margin-bottom:4px">Vytvoř účet na Anthropic</div><div style="font-size:13px;color:#64748b;margin-bottom:8px">Přejdi na Anthropic Console a zaregistruj se.</div><a href="https://console.anthropic.com" target="_blank" style="display:inline-block;background:#0a1628;color:white;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none">Otevřít Anthropic Console →</a></div>
+    </div>
+    <div style="display:flex;gap:14px;margin-bottom:18px;align-items:flex-start">
+      <div style="width:32px;height:32px;border-radius:50%;background:#f97316;color:white;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">2</div>
+      <div><div style="font-weight:700;font-size:14px;color:#0a1628;margin-bottom:4px">Dobij kredit</div><div style="font-size:13px;color:#64748b;margin-bottom:8px">Klikni na <b>Billing → Add credits</b>. Minimum $5 (cca 115 Kč).</div><a href="https://console.anthropic.com/settings/billing" target="_blank" style="display:inline-block;background:#0a1628;color:white;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none">Otevřít Billing →</a></div>
+    </div>
+    <div style="display:flex;gap:14px;margin-bottom:18px;align-items:flex-start">
+      <div style="width:32px;height:32px;border-radius:50%;background:#f97316;color:white;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">3</div>
+      <div><div style="font-weight:700;font-size:14px;color:#0a1628;margin-bottom:4px">Vytvoř API klíč</div><div style="font-size:13px;color:#64748b;margin-bottom:8px">Klikni na <b>API keys → Create Key</b>. Klíč začíná <b>sk-ant-...</b></div><a href="https://console.anthropic.com/settings/keys" target="_blank" style="display:inline-block;background:#0a1628;color:white;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none">Otevřít API Keys →</a></div>
+    </div>
+    <div style="display:flex;gap:14px;margin-bottom:24px;align-items:flex-start">
+      <div style="width:32px;height:32px;border-radius:50%;background:#f97316;color:white;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">4</div>
+      <div><div style="font-weight:700;font-size:14px;color:#0a1628;margin-bottom:4px">Vlož klíč do Expedice</div><div style="font-size:13px;color:#64748b">Zkopíruj klíč (sk-ant-...) a vlož ho do pole API klíč v nastavení ⚙️.</div></div>
+    </div>
+    <button onclick="hideApiGuide()" style="width:100%;background:#f97316;color:white;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:700;cursor:pointer">✓ Rozumím, jdu na to</button>
+  </div>
+</div>
+
+</body>
+</html>
