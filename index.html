@@ -33,38 +33,61 @@ html{font-size:16px;-webkit-text-size-adjust:100%}
 
 /* ===== MOBILE FONT IMPROVEMENTS ===== */
 @media screen and (max-width:430px){
-  .day-badge-label{font-size:9px!important}
-  .day-title{font-size:16px!important}
-  .day-route{font-size:13px!important}
-  .dchip{font-size:11px!important;padding:4px 9px!important}
-  .info-card-body{font-size:14px!important;line-height:1.75!important}
-  .results-stat-val{font-size:24px!important}
-  .results-stat-key{font-size:12px!important}
+  /* Formulář */
+  .form-label{font-size:13px!important;letter-spacing:.3px!important}
+  .form-input{font-size:16px!important}
+  .library-section-title{font-size:12px!important}
+  .date-col label{font-size:13px!important}
+  .stepper-val{font-size:26px!important}
+  .stepper-label{font-size:14px!important}
+  .vtype-icon{font-size:32px!important}
+  .vtype-label{font-size:13px!important}
+  .svc-icon{font-size:24px!important}
+  .svc-label{font-size:11px!important}
+  .style-icon{font-size:26px!important}
+  .style-label{font-size:12px!important}
+  .setup-card h2{font-size:22px!important}
+  .setup-card p{font-size:14px!important}
+  /* Výsledky */
   .results-dest{font-size:22px!important}
   .results-meta{font-size:14px!important}
+  .results-stat-val{font-size:24px!important}
+  .results-stat-key{font-size:12px!important}
+  .results-stat-pp{font-size:12px!important}
+  /* Dny */
+  .day-badge-label{font-size:9px!important}
+  .day-badge-num{font-size:20px!important}
+  .day-title{font-size:16px!important}
+  .day-route{font-size:13px!important}
+  .dchip{font-size:12px!important;padding:4px 10px!important}
+  .info-card-body{font-size:14px!important;line-height:1.75!important}
+  /* Rozpočet */
   .budget-cat{font-size:15px!important}
   .budget-det{font-size:12px!important}
   .budget-amount{font-size:17px!important}
+  .budget-total-amount{font-size:42px!important}
+  .budget-total-per{font-size:14px!important}
+  .budget-total-label{font-size:12px!important}
+  .savings-title{font-size:13px!important}
+  .saving-item{font-size:14px!important}
+  /* Chat */
   .chat-bubble{font-size:15px!important;line-height:1.6!important}
+  /* Fráze */
   .phrase-cs{font-size:14px!important}
   .phrase-original{font-size:15px!important}
   .phrase-phonetic{font-size:12px!important}
+  /* Info */
+  .prakticky-title{font-size:13px!important}
   .prakticky-text{font-size:14px!important;line-height:1.8!important}
+  /* Checklist */
+  .check-text{font-size:14px!important}
+  /* Karty tripů */
   .trip-card-name{font-size:16px!important}
   .trip-card-meta{font-size:13px!important}
+  /* Loading */
   .step-title{font-size:15px!important}
   .step-sub{font-size:13px!important}
-  .savings-title{font-size:12px!important}
-  .saving-item{font-size:14px!important}
-  .svc-label{font-size:11px!important}
-  .vtype-label{font-size:13px!important}
-  .stepper-label{font-size:14px!important}
-  .stepper-val{font-size:26px!important}
-  .setup-card h2{font-size:22px!important}
-  .setup-card p{font-size:14px!important}
-  .budget-total-amount{font-size:42px!important}
-  .budget-total-per{font-size:14px!important}
-  .check-text{font-size:14px!important}
+  /* Modal */
   .modal-card h3{font-size:20px!important}
 }
 body{
@@ -798,7 +821,7 @@ img{max-width:100%}
     </div>
 
     <div style="margin-top:32px;text-align:center;color:#475569;font-size:12px">
-      Vytvořeno s ❤️ pro výpravné dobrodruhy · v6.8
+      Vytvořeno s ❤️ pro výpravné dobrodruhy · v7.1
     </div>
   </div>
 </div>
@@ -1100,11 +1123,12 @@ img{max-width:100%}
         <option value="claude-haiku-4-5-20251001">claude-haiku-4-5 (nejrychlejší, nejlevnější)</option>
       </select>
     </div>
-    <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--g200)">
+    <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--g200);display:flex;justify-content:space-between;align-items:center">
       <button onclick="clearAllData()"
         style="color:var(--red);font-size:13px;font-weight:700;padding:8px 0">
         🗑️ Smazat všechna data a výpravy
       </button>
+      <span style="font-size:12px;color:var(--g400);font-weight:600">v7.1</span>
     </div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeSettings()">Zavřít</button>
@@ -1735,19 +1759,40 @@ async function generateTrip(fd, apiKey) {
   };
 
   if (isIOS) {
-    // iOS Safari: non-streaming fallback
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST', headers,
-      body: JSON.stringify({ model:getModel(), max_tokens:8000, stream:false,
-        messages:[{role:'user',content:prompt}] }),
-      signal: state.abortController?.signal,
-    });
-    if (!res.ok) {
-      const e = await res.json().catch(()=>({}));
-      throw new Error(e.error?.message || `HTTP ${res.status}`);
-    }
-    const data = await res.json();
-    const text = data.content?.[0]?.text || '';
+    // iOS Safari: non-streaming, with timeout + retry
+    const iosFetch = async (attempt) => {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 90000); // 90s timeout
+      // Combine with user abort signal
+      const userAbort = state.abortController?.signal;
+      if (userAbort) userAbort.addEventListener('abort', () => controller.abort());
+      try {
+        const res = await fetch('https://api.anthropic.com/v1/messages', {
+          method:'POST', headers,
+          body: JSON.stringify({ model:getModel(), max_tokens:8000, stream:false,
+            messages:[{role:'user',content:prompt}] }),
+          signal: controller.signal,
+        });
+        clearTimeout(timeout);
+        if (!res.ok) {
+          const e = await res.json().catch(()=>({}));
+          throw new Error(e.error?.message || `Chyba serveru ${res.status}`);
+        }
+        const data = await res.json();
+        return data.content?.[0]?.text || '';
+      } catch(e) {
+        clearTimeout(timeout);
+        if (userAbort?.aborted) throw new Error('AbortError');
+        if (attempt < 2 && (e.name === 'TypeError' || e.message.includes('Load failed') || e.message.includes('network'))) {
+          // Network error — wait 2s and retry
+          setText(document.getElementById('loading-sub'), `Síťová chyba, zkouším znovu (pokus ${attempt+1}/2)…`);
+          await new Promise(r => setTimeout(r, 2000));
+          return iosFetch(attempt + 1);
+        }
+        throw new Error(e.message === 'Load failed' ? 'Chyba sítě — zkontroluj připojení k internetu' : e.message);
+      }
+    };
+    const text = await iosFetch(1);
     return extractJSON(text);
   }
 
@@ -3198,13 +3243,54 @@ ${coverHtml}
 </div>
 </body></html>`;
 
-  const win = window.open('', '_blank');
-  if (!win) { showToast('❌ Povolte vyskakovací okna v prohlížeči', 4000); return; }
-  win.document.write(html);
-  win.document.close();
-  win.focus();
-  setTimeout(() => { win.print(); }, 800);
-  showToast('📄 PDF připraveno — v dialogu zvol "Uložit jako PDF"');
+  // Inject into current page — avoids iOS popup blocker
+  let overlay = document.getElementById('pdf-print-overlay');
+  if (overlay) overlay.remove();
+  overlay = document.createElement('div');
+  overlay.id = 'pdf-print-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#fff;overflow-y:auto;-webkit-overflow-scrolling:touch';
+
+  const closeBtn = document.createElement('div');
+  closeBtn.id = 'pdf-close-bar';
+  closeBtn.style.cssText = 'position:sticky;top:0;z-index:10;background:#0a1628;color:#fff;display:flex;justify-content:space-between;align-items:center;padding:12px 16px;gap:12px;print:none';
+  closeBtn.innerHTML = `
+    <button onclick="window.print()" style="background:#f97316;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:15px;font-weight:700;cursor:pointer;flex:1">🖨️ Uložit jako PDF</button>
+    <button onclick="document.getElementById('pdf-print-overlay').remove()" style="background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:8px;padding:10px 16px;font-size:15px;cursor:pointer">✕ Zavřít</button>`;
+
+  const frame = document.createElement('div');
+  frame.id = 'pdf-frame-content';
+  frame.innerHTML = html;
+
+  overlay.appendChild(closeBtn);
+  overlay.appendChild(frame);
+  document.body.appendChild(overlay);
+
+  // Load Noto Sans into main document head (needed for innerHTML injection)
+  if (!document.getElementById('noto-sans-font')) {
+    const link = document.createElement('link');
+    link.id = 'noto-sans-font';
+    link.rel = 'stylesheet';
+    link.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400;0,600;0,700;0,900;1,400&display=swap';
+    document.head.appendChild(link);
+  }
+
+  // PDF styles injected into main document
+  let printStyle = document.getElementById('pdf-print-style');
+  if (!printStyle) {
+    printStyle = document.createElement('style');
+    printStyle.id = 'pdf-print-style';
+    document.head.appendChild(printStyle);
+  }
+  printStyle.textContent = `
+    #pdf-frame-content * { font-family: 'Noto Sans', Arial, sans-serif !important; }
+    @media print {
+      body > *:not(#pdf-print-overlay) { display:none!important }
+      #pdf-close-bar { display:none!important }
+      #pdf-print-overlay { position:static!important; overflow:visible!important; }
+      @page { size:A4; margin:1.5cm; }
+    }`;
+
+  showToast('📄 Klikni "Uložit jako PDF" nahoře');
 }
 
 
