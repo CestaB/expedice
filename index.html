@@ -30,6 +30,43 @@
   --transition:.15s ease;
 }
 html{font-size:16px;-webkit-text-size-adjust:100%}
+
+/* ===== MOBILE FONT IMPROVEMENTS ===== */
+@media screen and (max-width:430px){
+  .day-badge-label{font-size:9px!important}
+  .day-title{font-size:16px!important}
+  .day-route{font-size:13px!important}
+  .dchip{font-size:11px!important;padding:4px 9px!important}
+  .info-card-body{font-size:14px!important;line-height:1.75!important}
+  .results-stat-val{font-size:24px!important}
+  .results-stat-key{font-size:12px!important}
+  .results-dest{font-size:22px!important}
+  .results-meta{font-size:14px!important}
+  .budget-cat{font-size:15px!important}
+  .budget-det{font-size:12px!important}
+  .budget-amount{font-size:17px!important}
+  .chat-bubble{font-size:15px!important;line-height:1.6!important}
+  .phrase-cs{font-size:14px!important}
+  .phrase-original{font-size:15px!important}
+  .phrase-phonetic{font-size:12px!important}
+  .prakticky-text{font-size:14px!important;line-height:1.8!important}
+  .trip-card-name{font-size:16px!important}
+  .trip-card-meta{font-size:13px!important}
+  .step-title{font-size:15px!important}
+  .step-sub{font-size:13px!important}
+  .savings-title{font-size:12px!important}
+  .saving-item{font-size:14px!important}
+  .svc-label{font-size:11px!important}
+  .vtype-label{font-size:13px!important}
+  .stepper-label{font-size:14px!important}
+  .stepper-val{font-size:26px!important}
+  .setup-card h2{font-size:22px!important}
+  .setup-card p{font-size:14px!important}
+  .budget-total-amount{font-size:42px!important}
+  .budget-total-per{font-size:14px!important}
+  .check-text{font-size:14px!important}
+  .modal-card h3{font-size:20px!important}
+}
 body{
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
   background:var(--g50); color:var(--g900);
@@ -761,7 +798,7 @@ img{max-width:100%}
     </div>
 
     <div style="margin-top:32px;text-align:center;color:#475569;font-size:12px">
-      Vytvořeno s ❤️ pro výpravné dobrodruhy · v6.6
+      Vytvořeno s ❤️ pro výpravné dobrodruhy · v6.7
     </div>
   </div>
 </div>
@@ -1058,9 +1095,9 @@ img{max-width:100%}
     <div class="field-group" style="margin-top:14px">
       <div class="form-label">Model</div>
       <select id="settings-model" class="form-input" style="font-size:15px">
-        <option value="claude-opus-4-5">claude-opus-4-5 (nejlepší)</option>
-        <option value="claude-sonnet-4-5">claude-sonnet-4-5 (rychlejší)</option>
-        <option value="claude-haiku-4-5-20251001">claude-haiku-4-5 (nejrychlejší)</option>
+        <option value="claude-opus-4-6">claude-opus-4-6 (nejlepší, nejdražší)</option>
+        <option value="claude-sonnet-4-6">claude-sonnet-4-6 (výchozí, doporučeno)</option>
+        <option value="claude-haiku-4-5-20251001">claude-haiku-4-5 (nejrychlejší, nejlevnější)</option>
       </select>
     </div>
     <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--g200)">
@@ -1141,7 +1178,7 @@ const db = {
 function getTrips() { return db.get(SK_TRIPS) || []; }
 function saveTrips(trips) { db.set(SK_TRIPS, trips); }
 function getApiKey() { return db.get(SK_APIKEY) || ''; }
-function getModel() { return db.get(SK_MODEL) || 'claude-opus-4-5'; }
+function getModel() { return db.get(SK_MODEL) || 'claude-sonnet-4-6'; }
 function getPassword() { return db.get(SK_PASSWORD) || DEFAULT_PASSWORD; }
 function getChecks() { return db.get(SK_CHECKS) || {}; }
 function saveChecks(c) { db.set(SK_CHECKS, c); }
@@ -1456,6 +1493,8 @@ POVINNÉ BEZPEČNOSTNÍ KONTROLY — pro každý den:
 
 DÉLKA ETAP: max 350 km/den pro pohodové tempo, 250 km pro relaxační, 400 km pro intenzivní.
 
+GPS SOUŘADNICE — POVINNÉ: Každý den MUSÍ mít pole "do_gps" s přesnými GPS souřadnicemi cílového místa (kemp, stellplatz, nebo centrum cílového města) ve formátu "lat,lon" (desetinná čísla, ne stupně). Meta MUSÍ mít "odjezd_gps" s GPS startovního místa. Tyto souřadnice slouží pro výpočet reálné vzdálenosti po silnicích — buď maximálně přesný!
+
 Vrať POUZE platný JSON (bez textu před ani po) v tomto formátu:
 ${JSON_START}
 {
@@ -1468,6 +1507,7 @@ ${JSON_START}
     "celkem_km": 850,
     "pocet_noci": 7,
     "pocet_osob": ${fd.pocetOsob},
+    "odjezd_gps": "50.0755,14.4378",
     "perex": "2-3 věty poetického popisu tripu"
   },
   "budget_summary": {
@@ -1492,6 +1532,7 @@ ${JSON_START}
       "km": 0,
       "cas_jizdy": "Xh Ymin",
       "info_row": "X km · Xh Ymin · ⛽ Xl · ~X Kč",
+      "do_gps": "48.2082,16.3738",
       "warnings": [
         {"typ": "vyska|ztl|uzka|dalnice", "ikona": "⚠️", "text": "popis varování"}
       ],
@@ -2713,7 +2754,7 @@ function closeSettingsOnBg(e) {
 
 function saveSettings() {
   const key = (document.getElementById('settings-key')?.value||'').trim();
-  const model = document.getElementById('settings-model')?.value||'claude-opus-4-5';
+  const model = document.getElementById('settings-model')?.value||'claude-sonnet-4-6';
   if (key) db.set(SK_APIKEY, key);
   db.set(SK_MODEL, model);
   closeSettings();
@@ -2728,144 +2769,167 @@ function clearAllData() {
   showToast('🗑️ Vše smazáno');
 }
 
-/* ===== PDF EXPORT ===== */
-async function exportPDF() {
+/* ===== PDF EXPORT (browser print — plná podpora češtiny) ===== */
+function exportPDF() {
   const trip = state.currentTrip?.data;
   if (!trip) return;
-  showToast('📄 Generuji PDF…', 5000);
+  const m = trip.meta || {};
+  const budget = trip.budget_summary || {};
+  const days = trip.dny || [];
+  const info = trip.prakticke_info || {};
+  const fd = state.currentTrip?.formData || {};
 
-  try {
-    // Load jsPDF lazily
-    if (!window.jspdf) {
-      await new Promise((resolve, reject) => {
-        const s = document.createElement('script');
-        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-        s.onload = resolve; s.onerror = reject;
-        document.head.appendChild(s);
-      });
-    }
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation:'p', unit:'mm', format:'a4' });
-    const W=210, ML=14, MR=196, CW=MR-ML;
-    let y=20;
-    const m = trip.meta||{};
-    const budget = trip.budget_summary||{};
+  const daysHtml = days.map((day, idx) => {
+    const nocColor = ['#16a34a','#2563eb','#7c3aed','#d97706','#dc2626','#0891b2'][idx % 6];
+    const warnings = (day.warnings||[]).map(w =>
+      `<div class="pdf-warning">⚠️ ${esc(w.text||'')}</div>`).join('');
+    const noc = day.nocovani || {};
+    const nocHtml = noc.nazev ? `
+      <div class="pdf-noc">
+        <span class="pdf-noc-icon">🏕️</span>
+        <div><strong>${esc(noc.nazev)}</strong>${noc.sluzby_text ? ' — '+esc(noc.sluzby_text) : ''}
+        ${noc.cena_eur ? `<br><span style="color:#16a34a;font-weight:700">${noc.cena_eur} €</span>` : noc.cena_czk ? `<br><span style="color:#16a34a;font-weight:700">${noc.cena_czk} Kč</span>` : ' · zdarma'}
+        </div>
+      </div>` : '';
+    return `
+      <div class="pdf-day">
+        <div class="pdf-day-header">
+          <div class="pdf-day-badge" style="background:${nocColor}">${day.cislo||idx+1}</div>
+          <div class="pdf-day-title-wrap">
+            <div class="pdf-day-title">${esc(day.nadpis||'Den '+(idx+1))}</div>
+            <div class="pdf-day-route">${esc(day.od||'')}${day.od&&day.do?' → ':''}${esc(day.do||'')} · ${esc(day.info_row||day.km+' km')}</div>
+          </div>
+        </div>
+        ${warnings}
+        ${nocHtml}
+        ${day.program ? `<div class="pdf-program">${esc(day.program)}</div>` : ''}
+        ${day.camper_tip ? `<div class="pdf-tip">💡 ${esc(day.camper_tip)}</div>` : ''}
+        ${day.jidlo ? `<div class="pdf-jidlo">🍽️ ${esc(day.jidlo)}</div>` : ''}
+      </div>`;
+  }).join('');
 
-    // Helpers
-    const fc=(r,g,b)=>doc.setFillColor(r,g,b);
-    const tc=(r,g,b)=>doc.setTextColor(r,g,b);
-    const font=(s,w='normal')=>{doc.setFontSize(s);doc.setFont('helvetica',w)};
-    const nl=(n=6)=>{y+=n};
-    const txt=(t,x,yy,opt)=>doc.text(String(t),x,yy||y,opt);
-    const wrapTxt=(t,maxW)=>doc.splitTextToSize(String(t),maxW);
-    const newPage=()=>{doc.addPage();y=20};
-    const checkPage=(need=20)=>{if(y+need>280){newPage()}};
+  const budgetRows = (budget.polozky||[]).map(p =>
+    `<tr><td>${p.icon||''} ${esc(p.nazev||'')}</td><td style="color:#64748b;font-size:12px">${esc(p.detail||'')}</td><td class="pdf-amount">${Math.round(p.czk||0).toLocaleString('cs-CZ')} Kč</td></tr>`
+  ).join('');
 
-    // PAGE 1 — Cover
-    fc(10,22,40); doc.rect(0,0,W,297,'F');
-    fc(249,115,22); doc.rect(0,260,W,37,'F');
-    // Title
-    tc(255,255,255); font(28,'bold');
-    const titleLines = wrapTxt(m.nazev||m.zeme||'Trip', CW);
-    titleLines.forEach((l,i)=>txt(l,ML,40+i*12));
-    // Meta
-    font(12,'normal'); tc(180,200,220);
-    txt(`${m.od||''} → ${m.do||''}`, ML, 40+titleLines.length*12+8);
-    txt(`${m.pocet_osob||2} os. · ${m.celkem_km||''} km · ${m.pocet_noci||''} nocí 🚐`, ML, 40+titleLines.length*12+18);
-    // Stats on orange strip
-    font(14,'bold'); tc(255,255,255);
-    txt(`${Math.round(budget.celkem_czk)||''} Kč celkem`, ML, 278);
-    txt(`${Math.round(budget.na_osobu_czk)||''} Kč/os.`, 120, 278);
-    // Perex
-    if (m.perex) {
-      font(11,'italic'); tc(140,170,200);
-      const pl = wrapTxt(m.perex, CW);
-      pl.forEach((l,i)=>txt(l,ML,200+i*7));
-    }
+  const tipy = (budget.tipy||[]).map(t => `<li>${esc(t)}</li>`).join('');
+  const dulezite = (info.dulezite||[]).map(d => `<li>${esc(d)}</li>`).join('');
 
-    // PAGE 2 — Itinerary days
-    newPage();
-    (trip.dny||[]).forEach((day,idx) => {
-      checkPage(60);
-      // Day badge
-      const col = BADGE_COLORS[idx%BADGE_COLORS.length];
-      const rgb = hexToRgb(col);
-      if (rgb) { fc(rgb.r,rgb.g,rgb.b); doc.circle(ML+5,y-1,5.5,'F'); }
-      tc(255,255,255); font(9,'bold');
-      txt(String(day.cislo||idx+1),ML+3,y+1.5);
-      // Day title
-      tc(10,22,40); font(13,'bold');
-      txt((day.nadpis||'Den '+(idx+1)), ML+14, y+2);
-      y+=6;
-      tc(100,116,139); font(9,'normal');
-      txt(`${day.od||''}${day.od&&day.do?' → ':''}${day.do||''} · ${day.info_row||day.km+' km'}`, ML+14, y+2);
-      y+=10;
-
-      // Overnight
-      if (day.nocovani?.nazev) {
-        fc(240,253,244); doc.roundedRect(ML,y,CW,16,2,2,'F');
-        tc(22,163,74); font(8,'bold'); txt('🏕️ NOCOVÁNÍ',ML+3,y+5);
-        tc(15,23,42); font(9,'normal');
-        const nl2=wrapTxt(`${day.nocovani.nazev} — ${day.nocovani.sluzby_text||''} · ${day.nocovani.cena_eur?day.nocovani.cena_eur+'€':'zdarma'}`,CW-6);
-        nl2.slice(0,2).forEach((l,i)=>txt(l,ML+3,y+10+i*4));
-        y+=20;
-      }
-
-      // Warnings
-      if (day.warnings?.length) {
-        fc(254,242,242); doc.roundedRect(ML,y,CW,10+day.warnings.length*5,2,2,'F');
-        tc(220,38,38); font(8,'bold'); txt('⚠️ VAROVÁNÍ',ML+3,y+5);
-        tc(55,65,81); font(8,'normal');
-        day.warnings.forEach((w,wi)=>txt(wrapTxt(w.text,CW-6)[0],ML+3,y+10+wi*5));
-        y+=14+day.warnings.length*5;
-      }
-
-      // Program snippet
-      if (day.program) {
-        tc(51,65,85); font(9,'normal');
-        const pl=wrapTxt(day.program,CW).slice(0,3);
-        pl.forEach(l=>{ checkPage(6); txt(l,ML,y); y+=5; });
-      }
-
-      if (day.camper_tip) {
-        checkPage(14);
-        fc(255,247,237); doc.roundedRect(ML,y,CW,12,2,2,'F');
-        tc(217,119,6); font(8,'bold'); txt('💡 CAMPER TIP',ML+3,y+5);
-        tc(55,65,81); font(8,'normal');
-        txt(wrapTxt(day.camper_tip,CW-6)[0],ML+3,y+10);
-        y+=15;
-      }
-      y+=8;
-    });
-
-    // PAGE — Budget
-    checkPage(80);
-    tc(10,22,40); font(16,'bold'); txt('💰 Přehled nákladů',ML,y); y+=10;
-    fc(249,115,22); doc.rect(ML,y,CW,1,'F'); y+=6;
-    (budget.polozky||[]).forEach(p=>{
-      checkPage(10);
-      tc(10,22,40); font(11,'bold'); txt(`${p.icon||''} ${p.nazev}`,ML,y);
-      tc(10,22,40); font(11,'bold'); txt(`${Math.round(p.czk||0)} Kč`,MR,y,{align:'right'});
-      tc(100,116,139); font(9,'normal'); txt(p.detail||'',ML,y+5);
-      y+=13;
-    });
-    y+=4;
-    fc(10,22,40); doc.rect(ML,y,CW,12,'F');
-    tc(249,115,22); font(13,'bold'); txt('CELKEM',ML+4,y+8);
-    tc(255,255,255); font(13,'bold'); txt(`${Math.round(budget.celkem_czk||0)} Kč`,MR-4,y+8,{align:'right'});
-    y+=18;
-    if (budget.na_osobu_czk) {
-      tc(100,116,139); font(9,'normal'); txt(`${Math.round(budget.na_osobu_czk)} Kč na osobu`,ML,y); y+=10;
-    }
-
-    // Save
-    const fname = (m.nazev||m.zeme||'Expedice').replace(/[^a-z0-9]/gi,'_')+'.pdf';
-    doc.save(fname);
-    showToast('✅ PDF staženo!');
-  } catch(err) {
-    console.error('PDF error:', err);
-    showToast('❌ PDF se nepodařilo vygenerovat: '+err.message, 4000);
+  const html = `<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<title>${esc(m.nazev||m.zeme||'Expedice')}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#0f172a;background:#fff;font-size:13px;line-height:1.6}
+  @media print{
+    body{font-size:11px}
+    .pdf-cover{page-break-after:always}
+    .pdf-day{page-break-inside:avoid}
+    @page{margin:15mm 14mm}
   }
+  /* COVER */
+  .pdf-cover{background:#0a1628;color:white;padding:60px 40px 0;min-height:100vh;display:flex;flex-direction:column;justify-content:space-between}
+  .pdf-flag{font-size:72px;margin-bottom:24px;line-height:1}
+  .pdf-title{font-size:36px;font-weight:900;margin-bottom:12px;line-height:1.2}
+  .pdf-subtitle{font-size:16px;color:rgba(255,255,255,.55);margin-bottom:32px}
+  .pdf-perex{font-size:15px;color:rgba(255,255,255,.7);max-width:540px;line-height:1.7;font-style:italic;margin-bottom:40px}
+  .pdf-cover-stats{display:flex;gap:32px;margin-bottom:40px}
+  .pdf-cover-stat{text-align:center}
+  .pdf-cover-stat-val{font-size:28px;font-weight:900;color:#f97316}
+  .pdf-cover-stat-key{font-size:11px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+  .pdf-cover-footer{background:#f97316;margin:0 -40px;padding:20px 40px;display:flex;justify-content:space-between;align-items:center}
+  .pdf-cover-footer-total{font-size:22px;font-weight:900;color:white}
+  .pdf-cover-footer-per{font-size:14px;color:rgba(255,255,255,.8)}
+  /* CONTENT */
+  .pdf-content{max-width:800px;margin:0 auto;padding:24px 20px}
+  .pdf-section-title{font-size:18px;font-weight:800;color:#0a1628;border-bottom:3px solid #f97316;padding-bottom:8px;margin:32px 0 16px}
+  /* DAY */
+  .pdf-day{margin-bottom:24px;padding:16px;border:1px solid #e2e8f0;border-radius:10px;background:#fafafa}
+  .pdf-day-header{display:flex;gap:12px;align-items:flex-start;margin-bottom:10px}
+  .pdf-day-badge{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;color:white;flex-shrink:0}
+  .pdf-day-title-wrap{flex:1}
+  .pdf-day-title{font-size:15px;font-weight:800;color:#0a1628}
+  .pdf-day-route{font-size:12px;color:#64748b;margin-top:2px}
+  .pdf-warning{background:#fef2f2;color:#dc2626;border-left:3px solid #dc2626;padding:6px 10px;border-radius:4px;font-size:12px;margin-bottom:6px}
+  .pdf-noc{display:flex;gap:10px;background:#f0fdf4;border-left:3px solid #16a34a;padding:8px 12px;border-radius:4px;margin-bottom:8px;font-size:12px}
+  .pdf-noc-icon{font-size:20px;flex-shrink:0}
+  .pdf-program{font-size:12px;color:#334155;line-height:1.7;margin-top:8px}
+  .pdf-tip{background:#fff7ed;border-left:3px solid #f97316;padding:6px 10px;border-radius:4px;font-size:12px;color:#92400e;margin-top:6px}
+  .pdf-jidlo{font-size:12px;color:#64748b;margin-top:6px}
+  /* BUDGET */
+  .pdf-budget-table{width:100%;border-collapse:collapse;margin-bottom:16px}
+  .pdf-budget-table td{padding:8px 10px;border-bottom:1px solid #f1f5f9;vertical-align:top}
+  .pdf-budget-table tr:last-child td{border-bottom:none}
+  .pdf-amount{text-align:right;font-weight:700;white-space:nowrap;color:#0a1628}
+  .pdf-budget-total{background:#0a1628;color:white;padding:12px 16px;border-radius:8px;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .pdf-budget-total-label{font-size:13px;font-weight:700}
+  .pdf-budget-total-val{font-size:20px;font-weight:900;color:#f97316}
+  .pdf-tipy{list-style:none;padding:0}
+  .pdf-tipy li{padding:5px 0 5px 20px;position:relative;font-size:12px;color:#334155;border-bottom:1px solid #f1f5f9}
+  .pdf-tipy li::before{content:'💡';position:absolute;left:0}
+  .pdf-info{font-size:12px;color:#334155;line-height:1.8;margin-bottom:12px}
+  .pdf-dulezite{list-style:none;padding:0}
+  .pdf-dulezite li{padding:4px 0 4px 18px;position:relative;font-size:12px;color:#334155}
+  .pdf-dulezite li::before{content:'→';position:absolute;left:0;color:#f97316;font-weight:700}
+  .pdf-footer{text-align:center;color:#94a3b8;font-size:11px;margin:40px 0 20px;padding-top:16px;border-top:1px solid #e2e8f0}
+</style>
+</head>
+<body>
+
+<div class="pdf-cover">
+  <div>
+    <div class="pdf-flag">${m.vlajka||'🚐'}</div>
+    <div class="pdf-title">${esc(m.nazev||m.zeme||'Výprava')}</div>
+    <div class="pdf-subtitle">${esc(m.od||'')} → ${esc(m.do||'')} · ${m.pocet_osob||fd.pocetOsob||2} osob${m.pocet_noci ? ' · '+m.pocet_noci+' nocí' : ''}</div>
+    ${m.perex ? `<div class="pdf-perex">${esc(m.perex)}</div>` : ''}
+    <div class="pdf-cover-stats">
+      ${m.celkem_km ? `<div class="pdf-cover-stat"><div class="pdf-cover-stat-val">${m.celkem_km} km</div><div class="pdf-cover-stat-key">celkem km</div></div>` : ''}
+      ${m.pocet_noci ? `<div class="pdf-cover-stat"><div class="pdf-cover-stat-val">${m.pocet_noci}</div><div class="pdf-cover-stat-key">nocí</div></div>` : ''}
+      ${days.length ? `<div class="pdf-cover-stat"><div class="pdf-cover-stat-val">${days.length}</div><div class="pdf-cover-stat-key">etap</div></div>` : ''}
+    </div>
+  </div>
+  <div class="pdf-cover-footer">
+    <div class="pdf-cover-footer-total">${budget.celkem_czk ? Math.round(budget.celkem_czk).toLocaleString('cs-CZ')+' Kč celkem' : ''}</div>
+    <div class="pdf-cover-footer-per">${budget.na_osobu_czk ? Math.round(budget.na_osobu_czk).toLocaleString('cs-CZ')+' Kč / osoba' : ''}</div>
+  </div>
+</div>
+
+<div class="pdf-content">
+
+  <div class="pdf-section-title">📅 Itinerář</div>
+  ${daysHtml}
+
+  <div class="pdf-section-title">💰 Rozpočet</div>
+  <table class="pdf-budget-table">
+    ${budgetRows}
+  </table>
+  <div class="pdf-budget-total">
+    <div class="pdf-budget-total-label">CELKEM</div>
+    <div class="pdf-budget-total-val">${budget.celkem_czk ? Math.round(budget.celkem_czk).toLocaleString('cs-CZ')+' Kč' : '—'}</div>
+  </div>
+  ${budget.na_osobu_czk ? `<div style="text-align:right;font-size:12px;color:#64748b;margin-bottom:12px">${Math.round(budget.na_osobu_czk).toLocaleString('cs-CZ')} Kč na osobu</div>` : ''}
+  ${tipy ? `<ul class="pdf-tipy">${tipy}</ul>` : ''}
+
+  ${info.text || dulezite ? `
+  <div class="pdf-section-title">ℹ️ Praktické informace</div>
+  ${info.text ? `<div class="pdf-info">${esc(info.text)}</div>` : ''}
+  ${dulezite ? `<ul class="pdf-dulezite">${dulezite}</ul>` : ''}
+  ` : ''}
+
+  <div class="pdf-footer">Vytvořeno aplikací Expedice 🚐 · Vytvořeno s ❤️ pro výpravné dobrodruhy</div>
+</div>
+
+</body></html>`;
+
+  const win = window.open('', '_blank');
+  if (!win) { showToast('❌ Povolte vyskakovací okna pro tisk PDF', 4000); return; }
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(() => { win.print(); }, 600);
+  showToast('📄 Okno pro tisk otevřeno — ulož jako PDF');
 }
 
 function hexToRgb(hex) {
