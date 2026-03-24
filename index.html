@@ -821,7 +821,7 @@ img{max-width:100%}
     </div>
 
     <div style="margin-top:32px;text-align:center;color:#475569;font-size:12px">
-      Vytvořeno s ❤️ pro výpravné dobrodruhy · v7.1
+      Vytvořeno s ❤️ pro výpravné dobrodruhy · v7.2
     </div>
   </div>
 </div>
@@ -858,8 +858,12 @@ img{max-width:100%}
     <button class="new-trip-btn" onclick="showView('planner')">
       🗺️ Naplánovat nový trip
     </button>
+    <label style="display:flex;align-items:center;justify-content:center;gap:8px;margin:8px 16px 0;padding:14px;border:2px dashed var(--g300);border-radius:var(--r);cursor:pointer;color:var(--g500);font-size:14px;font-weight:600;transition:border-color .2s" onmouseover="this.style.borderColor='var(--orange)'" onmouseout="this.style.borderColor='var(--g300)'">
+      📂 Načíst výpravu ze zálohy
+      <input type="file" accept=".json" style="display:none" onchange="importBackup(this)">
+    </label>
     <div id="trips-list"></div>
-    <div style="text-align:center;padding:12px 0 4px;font-size:11px;color:var(--g400);font-weight:600">v7.1</div>
+    <div style="text-align:center;padding:12px 0 4px;font-size:11px;color:var(--g400);font-weight:600">v7.2</div>
   </div>
 </div>
 
@@ -1075,6 +1079,7 @@ img{max-width:100%}
     <div class="header-actions">
       <button class="icon-btn" onclick="saveCurrentTrip()" title="Uložit trip" id="save-btn">💾</button>
       <button class="icon-btn" onclick="exportPDF()" title="Export PDF">📄</button>
+      <button class="icon-btn" onclick="downloadBackup()" title="Stáhnout zálohu (JSON + PDF)">📥</button>
       <button class="icon-btn" onclick="shareTrip()" title="Sdílet">📤</button>
     </div>
   </header>
@@ -1108,7 +1113,7 @@ img{max-width:100%}
 <!-- Settings Modal -->
 <div id="modal-settings" class="modal-overlay hidden" onclick="closeSettingsOnBg(event)">
   <div class="modal-card">
-    <h3 style="display:flex;justify-content:space-between;align-items:center">⚙️ Nastavení <span style="font-size:13px;font-weight:600;color:var(--orange);background:var(--orange-l);padding:2px 8px;border-radius:6px">v7.1</span></h3>
+    <h3 style="display:flex;justify-content:space-between;align-items:center">⚙️ Nastavení <span style="font-size:13px;font-weight:600;color:var(--orange);background:var(--orange-l);padding:2px 8px;border-radius:6px">v7.2</span></h3>
     <div class="field-group">
       <div class="form-label">API klíč (Anthropic)</div>
       <input id="settings-key" type="text" class="form-input"
@@ -1129,7 +1134,7 @@ img{max-width:100%}
         style="color:var(--red);font-size:13px;font-weight:700;padding:8px 0">
         🗑️ Smazat všechna data a výpravy
       </button>
-      <span style="font-size:12px;color:var(--g400);font-weight:600">v7.1</span>
+      <span style="font-size:12px;color:var(--g400);font-weight:600">v7.2</span>
     </div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeSettings()">Zavřít</button>
@@ -1884,6 +1889,65 @@ function saveCurrentTrip() {
 function backFromResults() {
   showView('library');
   renderLibrary();
+}
+
+/* ===== ZÁLOHA — stažení JSON + otevření PDF ===== */
+function downloadBackup() {
+  const trip = state.currentTrip;
+  if (!trip?.data) { showToast('⚠️ Žádná výprava k uložení'); return; }
+
+  // 1) Stáhnout JSON zálohu
+  const nazev = (trip.data.meta?.nazev || trip.name || 'expedice')
+    .replace(/[^a-z0-9áčďéěíňóřšťúůýžÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ\s]/gi, '')
+    .trim().replace(/\s+/g, '-').toLowerCase();
+  const zaloha = {
+    verze: '1.0',
+    exportovano: new Date().toISOString(),
+    trip: trip
+  };
+  const blob = new Blob([JSON.stringify(zaloha, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `expedice-${nazev}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+
+  // 2) Otevřít PDF overlay (uživatel klikne Uložit jako PDF)
+  setTimeout(() => exportPDF(), 500);
+
+  showToast('📥 JSON stažen — PDF se otevře za chvíli');
+}
+
+/* ===== IMPORT — načtení zálohy ze souboru ===== */
+function importBackup(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const zaloha = JSON.parse(e.target.result);
+      // Podpora starého formátu (přímý trip) i nového (s obálkou verze)
+      const trip = zaloha.trip || zaloha;
+      if (!trip.data?.meta) throw new Error('Neplatný soubor zálohy');
+
+      // Přidat do seznamu výprav s novým ID pokud ještě neexistuje
+      const trips = getTrips();
+      const existuje = trips.find(t => t.id === trip.id);
+      if (!existuje) {
+        trips.unshift(trip);
+        saveTrips(trips);
+        renderLibrary();
+        showToast('✅ Výprava načtena ze zálohy!');
+      } else {
+        showToast('ℹ️ Tato výprava je už uložena');
+      }
+    } catch(err) {
+      showToast('❌ Chyba při čtení souboru: ' + err.message, 4000);
+    }
+  };
+  reader.readAsText(file);
+  input.value = ''; // Reset pro příští použití
 }
 
 function updateSaveBtn(saved) {
