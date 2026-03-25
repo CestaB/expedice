@@ -54,11 +54,15 @@ html{font-size:16px;-webkit-text-size-adjust:100%}
   .results-stat-val{font-size:24px!important}
   .results-stat-key{font-size:12px!important}
   .results-stat-pp{font-size:12px!important}
-  /* Dny */
-  .day-badge-label{font-size:9px!important}
-  .day-badge-num{font-size:20px!important}
-  .day-title{font-size:16px!important}
-  .day-route{font-size:13px!important}
+  /* Dny — mobilní layout */
+  .day-card-header{flex-wrap:wrap!important;gap:10px!important;padding:12px 14px!important}
+  .day-badge{width:38px!important;height:38px!important}
+  .day-badge-label{font-size:8px!important}
+  .day-badge-num{font-size:17px!important}
+  .day-header-info{flex:1 1 calc(100% - 54px)!important;min-width:0!important}
+  .day-title{font-size:17px!important;line-height:1.3!important}
+  .day-route{font-size:13px!important;margin-top:2px!important}
+  .day-chips{width:100%!important;margin-top:2px!important;padding-left:48px!important}
   .dchip{font-size:12px!important;padding:4px 10px!important}
   .info-card-body{font-size:14px!important;line-height:1.75!important}
   /* Rozpočet */
@@ -507,7 +511,7 @@ img{max-width:100%}
   box-shadow:var(--shadow);
 }
 .day-card-header{
-  display:flex;align-items:center;gap:12px;
+  display:flex;flex-wrap:wrap;align-items:center;gap:12px;
   padding:14px 16px;cursor:pointer;
   user-select:none;
 }
@@ -821,7 +825,7 @@ img{max-width:100%}
     </div>
 
     <div style="margin-top:32px;text-align:center;color:#475569;font-size:12px">
-      Vytvořeno s ❤️ pro výpravné dobrodruhy · v7.2
+      Vytvořeno s ❤️ pro výpravné dobrodruhy · v7.3
     </div>
   </div>
 </div>
@@ -863,7 +867,7 @@ img{max-width:100%}
       <input type="file" accept=".json" style="display:none" onchange="importBackup(this)">
     </label>
     <div id="trips-list"></div>
-    <div style="text-align:center;padding:12px 0 4px;font-size:11px;color:var(--g400);font-weight:600">v7.2</div>
+    <div style="text-align:center;padding:12px 0 4px;font-size:11px;color:var(--g400);font-weight:600">v7.3</div>
   </div>
 </div>
 
@@ -874,6 +878,14 @@ img{max-width:100%}
     <div class="header-title">Nový trip</div>
   </header>
   <div class="planner-body">
+
+    <!-- Trip name -->
+    <div class="form-section">
+      <div class="form-label">✏️ Název expedice <span style="font-weight:400;color:var(--g400)">(nepovinné)</span></div>
+      <input id="f-trip-name" type="text" class="form-input"
+        placeholder="např. Termály Maďarsko 2026, Balkán s dětmi…"
+        style="font-size:16px;font-weight:600">
+    </div>
 
     <!-- Destination -->
     <div class="form-section">
@@ -1113,7 +1125,7 @@ img{max-width:100%}
 <!-- Settings Modal -->
 <div id="modal-settings" class="modal-overlay hidden" onclick="closeSettingsOnBg(event)">
   <div class="modal-card">
-    <h3 style="display:flex;justify-content:space-between;align-items:center">⚙️ Nastavení <span style="font-size:13px;font-weight:600;color:var(--orange);background:var(--orange-l);padding:2px 8px;border-radius:6px">v7.2</span></h3>
+    <h3 style="display:flex;justify-content:space-between;align-items:center">⚙️ Nastavení <span style="font-size:13px;font-weight:600;color:var(--orange);background:var(--orange-l);padding:2px 8px;border-radius:6px">v7.3</span></h3>
     <div class="field-group">
       <div class="form-label">API klíč (Anthropic)</div>
       <input id="settings-key" type="text" class="form-input"
@@ -1134,7 +1146,7 @@ img{max-width:100%}
         style="color:var(--red);font-size:13px;font-weight:700;padding:8px 0">
         🗑️ Smazat všechna data a výpravy
       </button>
-      <span style="font-size:12px;color:var(--g400);font-weight:600">v7.2</span>
+      <span style="font-size:12px;color:var(--g400);font-weight:600">v7.3</span>
     </div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeSettings()">Zavřít</button>
@@ -1273,6 +1285,8 @@ function afterUnlock() {
 }
 
 function isUnlocked() {
+  // Pokud existuje API klíč v localStorage, uživatel je "odemčen" napořád
+  if (getApiKey()) return true;
   const ts = db.get(SK_UNLOCKED);
   return ts && (Date.now() - ts < SESSION_TTL);
 }
@@ -1448,6 +1462,7 @@ function collectFormData() {
   const styles = Array.from(document.querySelectorAll('.style-btn.active')).map(b => b.dataset.style);
 
   return {
+    nazevExpedice: document.getElementById('f-trip-name')?.value?.trim() || '',
     destinace: document.getElementById('f-dest')?.value?.trim() || '',
     datumOd:   document.getElementById('f-date-from')?.value || '',
     casOd:     document.getElementById('f-time-from')?.value || '08:00',
@@ -1480,7 +1495,7 @@ function buildPrompt(fd) {
 
   return `Jsi expert na road tripy v obytném autě po Evropě. Naplánuj kompletní itinerář na základě těchto parametrů:
 
-DESTINACE: ${fd.destinace}
+${fd.nazevExpedice ? `NÁZEV EXPEDICE (zadaný uživatelem, POUŽIJ přesně): ${fd.nazevExpedice}\n` : ''}DESTINACE: ${fd.destinace}
 TERMÍN: ${fd.datumOd} ${fd.casOd} → ${fd.datumDo} ${fd.casDo}
 ODJEZD: ${fd.odjezdZ}
 POČET OSOB: ${fd.pocetOsob}
@@ -1675,7 +1690,7 @@ async function startGeneration() {
     clearProgressTimer();
     state.currentTrip = {
       id: 'trip_' + Date.now(),
-      name: tripData.meta?.nazev || fd.destinace,
+      name: fd.nazevExpedice || tripData.meta?.nazev || fd.destinace,
       savedAt: null,
       formData: fd,
       data: tripData,
@@ -2981,18 +2996,11 @@ function exportPDF() {
       </table>
     </div>` : '';
 
-  /* ── FULL HTML ── */
-  const html = `<!DOCTYPE html>
-<html lang="cs">
-<head>
-<meta charset="UTF-8">
-<title>${safe(m.nazev||m.zeme||'Expedice')}</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400;0,600;0,700;0,900;1,400&display=swap" rel="stylesheet">
-<style>
+  /* ── CSS for PDF ── */
+  const pdfCss = `
 /* ── RESET & BASE ── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body {
+#pdf-frame-content *, #pdf-frame-content *::before, #pdf-frame-content *::after { box-sizing: border-box; margin: 0; padding: 0; }
+#pdf-frame-content {
   font-family: 'Noto Sans', 'DejaVu Sans', Arial, sans-serif;
   font-size: 11pt;
   line-height: 1.65;
@@ -3008,15 +3016,15 @@ body {
   margin: 1.5cm;
 }
 @media print {
-  body { font-size: 10pt; }
-  .cover { page-break-after: always; min-height: auto; }
-  .day-card { page-break-inside: avoid; }
-  .section { page-break-inside: avoid; }
-  .no-break { page-break-inside: avoid; }
+  #pdf-frame-content { font-size: 10pt; }
+  #pdf-frame-content .cover { page-break-after: always; min-height: auto; }
+  #pdf-frame-content .day-card { page-break-inside: avoid; }
+  #pdf-frame-content .section { page-break-inside: avoid; }
+  #pdf-frame-content .no-break { page-break-inside: avoid; }
 }
 
 /* ── COVER PAGE ── */
-.cover {
+#pdf-frame-content .cover {
   min-height: 100vh;
   background: linear-gradient(160deg, #0a1628 0%, #1e3a5f 60%, #0a1628 100%);
   color: #fff;
@@ -3025,250 +3033,74 @@ body {
   justify-content: space-between;
   padding: 3cm 2cm 0;
 }
-.cover-top { flex: 1; }
-.cover-flag { font-size: 64pt; line-height: 1; margin-bottom: 0.6cm; }
-.cover-title {
-  font-size: 28pt;
-  font-weight: 900;
-  line-height: 1.15;
-  margin-bottom: 0.4cm;
-  color: #fff;
-}
-.cover-subtitle {
-  font-size: 13pt;
-  color: rgba(255,255,255,0.6);
-  margin-bottom: 0.8cm;
-}
-.cover-perex {
-  font-size: 12pt;
-  font-style: italic;
-  color: rgba(255,255,255,0.75);
-  max-width: 16cm;
-  line-height: 1.7;
-  margin-bottom: 1cm;
-}
-.cover-stats {
-  display: flex;
-  gap: 1.2cm;
-  margin-bottom: 1.2cm;
-}
-.cover-stat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: rgba(255,255,255,0.08);
-  border-radius: 8px;
-  padding: 0.4cm 0.7cm;
-  min-width: 2.5cm;
-}
-.cover-stat-val {
-  font-size: 22pt;
-  font-weight: 900;
-  color: #f97316;
-  line-height: 1;
-}
-.cover-stat-lbl {
-  font-size: 8pt;
-  color: rgba(255,255,255,0.5);
-  text-transform: uppercase;
-  letter-spacing: 0.5pt;
-  margin-top: 3pt;
-}
-.cover-budget {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #f97316;
-  margin: 0 -2cm;
-  padding: 0.6cm 2cm;
-}
-.cover-budget-total { font-size: 20pt; font-weight: 900; color: #fff; }
-.cover-budget-lbl { font-size: 9pt; color: rgba(255,255,255,0.75); margin-top: 2pt; }
-.cover-footer {
-  text-align: center;
-  font-size: 9pt;
-  color: rgba(255,255,255,0.3);
-  padding: 0.4cm 0;
-}
+#pdf-frame-content .cover-top { flex: 1; }
+#pdf-frame-content .cover-flag { font-size: 64pt; line-height: 1; margin-bottom: 0.6cm; }
+#pdf-frame-content .cover-title { font-size: 28pt; font-weight: 900; line-height: 1.15; margin-bottom: 0.4cm; color: #fff; }
+#pdf-frame-content .cover-subtitle { font-size: 13pt; color: rgba(255,255,255,0.6); margin-bottom: 0.8cm; }
+#pdf-frame-content .cover-perex { font-size: 12pt; font-style: italic; color: rgba(255,255,255,0.75); max-width: 16cm; line-height: 1.7; margin-bottom: 1cm; }
+#pdf-frame-content .cover-stats { display: flex; gap: 1.2cm; margin-bottom: 1.2cm; flex-wrap: wrap; }
+#pdf-frame-content .cover-stat { display: flex; flex-direction: column; align-items: center; background: rgba(255,255,255,0.08); border-radius: 8px; padding: 0.4cm 0.7cm; min-width: 2.5cm; }
+#pdf-frame-content .cover-stat-val { font-size: 22pt; font-weight: 900; color: #f97316; line-height: 1; }
+#pdf-frame-content .cover-stat-lbl { font-size: 8pt; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.5pt; margin-top: 3pt; }
+#pdf-frame-content .cover-budget { display: flex; justify-content: space-between; align-items: center; background: #f97316; margin: 0 -2cm; padding: 0.6cm 2cm; }
+#pdf-frame-content .cover-budget-total { font-size: 20pt; font-weight: 900; color: #fff; }
+#pdf-frame-content .cover-budget-lbl { font-size: 9pt; color: rgba(255,255,255,0.75); margin-top: 2pt; }
+#pdf-frame-content .cover-footer { text-align: center; font-size: 9pt; color: rgba(255,255,255,0.3); padding: 0.4cm 0; }
+#pdf-frame-content .content { padding: 0.5cm 0; }
+#pdf-frame-content .section { margin-bottom: 0.8cm; }
+#pdf-frame-content .section-title { font-size: 18pt; font-weight: 900; color: #0a1628; border-left: 5px solid #f97316; padding-left: 0.5cm; margin: 1cm 0 0.6cm; line-height: 1.2; }
+#pdf-frame-content .day-card { border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; margin-bottom: 0.5cm; background: #fff; }
+#pdf-frame-content .day-header { display: flex; align-items: center; gap: 0.5cm; background: var(--day-color, #0a1628); padding: 0.35cm 0.5cm; }
+#pdf-frame-content .day-num { width: 32pt; height: 32pt; border-radius: 50%; background: rgba(255,255,255,0.2); color: #fff; font-weight: 900; font-size: 14pt; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+#pdf-frame-content .day-header-text { flex: 1; }
+#pdf-frame-content .day-title { font-size: 14pt; font-weight: 700; color: #fff; line-height: 1.2; }
+#pdf-frame-content .day-route { font-size: 9pt; color: rgba(255,255,255,0.7); margin-top: 2pt; }
+#pdf-frame-content .day-body { padding: 0.4cm 0.5cm; }
+#pdf-frame-content .day-program { font-size: 11pt; color: #334155; line-height: 1.7; padding: 0.4cm 0.5cm; border-top: 1px solid #f1f5f9; }
+#pdf-frame-content .warn-box { background: #fef2f2; border-left: 4px solid #dc2626; color: #991b1b; font-size: 10pt; padding: 0.25cm 0.4cm; margin: 0; }
+#pdf-frame-content .noc-box { display: flex; gap: 0.4cm; align-items: flex-start; background: #f0fdf4; border-left: 4px solid #16a34a; padding: 0.3cm 0.4cm; font-size: 10pt; }
+#pdf-frame-content .noc-icon { font-size: 16pt; flex-shrink: 0; line-height: 1.2; }
+#pdf-frame-content .noc-content { flex: 1; line-height: 1.6; }
+#pdf-frame-content .noc-price { color: #16a34a; font-weight: 700; }
+#pdf-frame-content .noc-services { color: #64748b; }
+#pdf-frame-content .noc-detail { color: #64748b; }
+#pdf-frame-content .day-chips { display: flex; flex-direction: column; gap: 4pt; padding: 0.3cm 0.5cm; border-top: 1px solid #f8fafc; }
+#pdf-frame-content .chip { font-size: 10pt; padding: 0.2cm 0.4cm; border-radius: 6px; line-height: 1.5; }
+#pdf-frame-content .chip-orange { background: #fff7ed; color: #92400e; border-left: 3px solid #f97316; }
+#pdf-frame-content .chip-green { background: #f0fdf4; color: #166534; border-left: 3px solid #16a34a; }
+#pdf-frame-content .chip-blue { background: #eff6ff; color: #1e40af; border-left: 3px solid #2563eb; }
+#pdf-frame-content .budget-table { width: 100%; border-collapse: collapse; font-size: 11pt; margin-bottom: 0.4cm; }
+#pdf-frame-content .budget-table thead tr { background: #0a1628; color: #fff; }
+#pdf-frame-content .budget-table thead th { padding: 0.25cm 0.4cm; font-size: 9pt; font-weight: 700; text-align: left; text-transform: uppercase; letter-spacing: 0.3pt; }
+#pdf-frame-content .budget-table tbody tr { border-bottom: 1px solid #f1f5f9; }
+#pdf-frame-content .budget-table tbody tr:nth-child(even) { background: #f8fafc; }
+#pdf-frame-content .bud-icon { width: 1.2cm; text-align: center; padding: 0.3cm 0.2cm; font-size: 14pt; }
+#pdf-frame-content .bud-name { font-weight: 700; color: #0a1628; padding: 0.3cm 0.3cm; }
+#pdf-frame-content .bud-detail { color: #64748b; font-size: 10pt; padding: 0.3cm 0.3cm; }
+#pdf-frame-content .bud-amount { text-align: right; font-weight: 700; color: #0a1628; white-space: nowrap; padding: 0.3cm 0.4cm; }
+#pdf-frame-content .budget-total-row { background: #0a1628; display: flex; justify-content: space-between; align-items: center; padding: 0.35cm 0.5cm; border-radius: 8px; margin-bottom: 0.2cm; }
+#pdf-frame-content .budget-total-label { font-size: 11pt; font-weight: 700; color: #fff; }
+#pdf-frame-content .budget-total-val { font-size: 18pt; font-weight: 900; color: #f97316; }
+#pdf-frame-content .budget-per { text-align: right; font-size: 10pt; color: #64748b; margin-bottom: 0.4cm; }
+#pdf-frame-content .tipy-list { list-style: none; padding: 0; }
+#pdf-frame-content .tipy-list li { padding: 0.2cm 0.3cm 0.2cm 1cm; position: relative; font-size: 10pt; color: #334155; border-bottom: 1px solid #f1f5f9; line-height: 1.6; }
+#pdf-frame-content .tipy-list li::before { content: '💡'; position: absolute; left: 0.2cm; }
+#pdf-frame-content .info-text { font-size: 11pt; color: #334155; line-height: 1.75; margin-bottom: 0.4cm; }
+#pdf-frame-content .dulezite-list { list-style: none; padding: 0; }
+#pdf-frame-content .dulezite-list li { padding: 0.2cm 0.3cm 0.2cm 0.9cm; position: relative; font-size: 10.5pt; color: #334155; line-height: 1.6; border-bottom: 1px solid #f1f5f9; }
+#pdf-frame-content .dulezite-list li::before { content: '→'; position: absolute; left: 0.2cm; color: #f97316; font-weight: 700; }
+#pdf-frame-content .fraze-table { width: 100%; border-collapse: collapse; font-size: 10.5pt; }
+#pdf-frame-content .fraze-table thead tr { background: #f1f5f9; }
+#pdf-frame-content .fraze-table thead th { padding: 0.25cm 0.4cm; text-align: left; font-size: 9pt; font-weight: 700; text-transform: uppercase; color: #64748b; }
+#pdf-frame-content .fraze-table tbody tr { border-bottom: 1px solid #f1f5f9; }
+#pdf-frame-content .fraze-table td { padding: 0.25cm 0.4cm; vertical-align: top; }
+#pdf-frame-content .fraze-orig { font-weight: 700; color: #f97316; }
+#pdf-frame-content .fraze-ph { color: #64748b; font-style: italic; }
+#pdf-frame-content .doc-footer { text-align: center; font-size: 9pt; color: #94a3b8; padding-top: 0.5cm; margin-top: 0.8cm; border-top: 1px solid #e2e8f0; }
+`;
 
-/* ── CONTENT WRAPPER ── */
-.content { padding: 0.5cm 0; }
-
-/* ── SECTION TITLES ── */
-.section { margin-bottom: 0.8cm; }
-.section-title {
-  font-size: 18pt;
-  font-weight: 900;
-  color: #0a1628;
-  border-left: 5px solid #f97316;
-  padding-left: 0.5cm;
-  margin: 1cm 0 0.6cm;
-  line-height: 1.2;
-}
-
-/* ── DAY CARDS ── */
-.day-card {
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  overflow: hidden;
-  margin-bottom: 0.5cm;
-  background: #fff;
-}
-.day-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5cm;
-  background: var(--day-color, #0a1628);
-  padding: 0.35cm 0.5cm;
-}
-.day-num {
-  width: 32pt;
-  height: 32pt;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.2);
-  color: #fff;
-  font-weight: 900;
-  font-size: 14pt;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-.day-header-text { flex: 1; }
-.day-title {
-  font-size: 14pt;
-  font-weight: 700;
-  color: #fff;
-  line-height: 1.2;
-}
-.day-route {
-  font-size: 9pt;
-  color: rgba(255,255,255,0.7);
-  margin-top: 2pt;
-}
-.day-body { padding: 0.4cm 0.5cm; }
-.day-program {
-  font-size: 11pt;
-  color: #334155;
-  line-height: 1.7;
-  padding: 0.4cm 0.5cm;
-  border-top: 1px solid #f1f5f9;
-}
-
-/* ── WARN BOX ── */
-.warn-box {
-  background: #fef2f2;
-  border-left: 4px solid #dc2626;
-  color: #991b1b;
-  font-size: 10pt;
-  padding: 0.25cm 0.4cm;
-  margin: 0;
-}
-
-/* ── NOC BOX ── */
-.noc-box {
-  display: flex;
-  gap: 0.4cm;
-  align-items: flex-start;
-  background: #f0fdf4;
-  border-left: 4px solid #16a34a;
-  padding: 0.3cm 0.4cm;
-  font-size: 10pt;
-}
-.noc-icon { font-size: 16pt; flex-shrink: 0; line-height: 1.2; }
-.noc-content { flex: 1; line-height: 1.6; }
-.noc-price { color: #16a34a; font-weight: 700; }
-.noc-services { color: #64748b; }
-.noc-detail { color: #64748b; }
-
-/* ── CHIPS ── */
-.day-chips { display: flex; flex-direction: column; gap: 4pt; padding: 0.3cm 0.5cm; border-top: 1px solid #f8fafc; }
-.chip { font-size: 10pt; padding: 0.2cm 0.4cm; border-radius: 6px; line-height: 1.5; }
-.chip-orange { background: #fff7ed; color: #92400e; border-left: 3px solid #f97316; }
-.chip-green  { background: #f0fdf4; color: #166534; border-left: 3px solid #16a34a; }
-.chip-blue   { background: #eff6ff; color: #1e40af; border-left: 3px solid #2563eb; }
-
-/* ── BUDGET TABLE ── */
-.budget-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 11pt;
-  margin-bottom: 0.4cm;
-}
-.budget-table thead tr { background: #0a1628; color: #fff; }
-.budget-table thead th {
-  padding: 0.25cm 0.4cm;
-  font-size: 9pt;
-  font-weight: 700;
-  text-align: left;
-  text-transform: uppercase;
-  letter-spacing: 0.3pt;
-}
-.budget-table tbody tr { border-bottom: 1px solid #f1f5f9; }
-.budget-table tbody tr:nth-child(even) { background: #f8fafc; }
-.bud-icon { width: 1.2cm; text-align: center; padding: 0.3cm 0.2cm; font-size: 14pt; }
-.bud-name { font-weight: 700; color: #0a1628; padding: 0.3cm 0.3cm; }
-.bud-detail { color: #64748b; font-size: 10pt; padding: 0.3cm 0.3cm; }
-.bud-amount { text-align: right; font-weight: 700; color: #0a1628; white-space: nowrap; padding: 0.3cm 0.4cm; }
-.budget-total-row {
-  background: #0a1628;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.35cm 0.5cm;
-  border-radius: 8px;
-  margin-bottom: 0.2cm;
-}
-.budget-total-label { font-size: 11pt; font-weight: 700; color: #fff; }
-.budget-total-val { font-size: 18pt; font-weight: 900; color: #f97316; }
-.budget-per { text-align: right; font-size: 10pt; color: #64748b; margin-bottom: 0.4cm; }
-.tipy-list { list-style: none; padding: 0; }
-.tipy-list li {
-  padding: 0.2cm 0.3cm 0.2cm 1cm;
-  position: relative;
-  font-size: 10pt;
-  color: #334155;
-  border-bottom: 1px solid #f1f5f9;
-  line-height: 1.6;
-}
-.tipy-list li::before { content: '💡'; position: absolute; left: 0.2cm; }
-
-/* ── PRACTICAL INFO ── */
-.info-text { font-size: 11pt; color: #334155; line-height: 1.75; margin-bottom: 0.4cm; }
-.dulezite-list { list-style: none; padding: 0; }
-.dulezite-list li {
-  padding: 0.2cm 0.3cm 0.2cm 0.9cm;
-  position: relative;
-  font-size: 10.5pt;
-  color: #334155;
-  line-height: 1.6;
-  border-bottom: 1px solid #f1f5f9;
-}
-.dulezite-list li::before { content: '→'; position: absolute; left: 0.2cm; color: #f97316; font-weight: 700; }
-
-/* ── FRAZE TABLE ── */
-.fraze-table { width: 100%; border-collapse: collapse; font-size: 10.5pt; }
-.fraze-table thead tr { background: #f1f5f9; }
-.fraze-table thead th { padding: 0.25cm 0.4cm; text-align: left; font-size: 9pt; font-weight: 700; text-transform: uppercase; color: #64748b; }
-.fraze-table tbody tr { border-bottom: 1px solid #f1f5f9; }
-.fraze-table tbody tr:hover { background: #fafafa; }
-.fraze-table td { padding: 0.25cm 0.4cm; vertical-align: top; }
-.fraze-orig { font-weight: 700; color: #f97316; }
-.fraze-ph { color: #64748b; font-style: italic; }
-
-/* ── FOOTER ── */
-.doc-footer {
-  text-align: center;
-  font-size: 9pt;
-  color: #94a3b8;
-  padding-top: 0.5cm;
-  margin-top: 0.8cm;
-  border-top: 1px solid #e2e8f0;
-}
-</style>
-</head>
-<body>
-
+  /* ── BODY CONTENT (bez <html>/<head> — jde přímo do innerHTML divu) ── */
+  const bodyHtml = `
 ${coverHtml}
 
 <div class="content">
@@ -3305,8 +3137,7 @@ ${coverHtml}
     Vytvořeno aplikací Expedice 🚐 · Vytvořeno s ❤️ pro výpravné dobrodruhy
   </div>
 
-</div>
-</body></html>`;
+</div>`;
 
   // Inject into current page — avoids iOS popup blocker
   let overlay = document.getElementById('pdf-print-overlay');
@@ -3317,20 +3148,20 @@ ${coverHtml}
 
   const closeBtn = document.createElement('div');
   closeBtn.id = 'pdf-close-bar';
-  closeBtn.style.cssText = 'position:sticky;top:0;z-index:10;background:#0a1628;color:#fff;display:flex;justify-content:space-between;align-items:center;padding:12px 16px;gap:12px;print:none';
+  closeBtn.style.cssText = 'position:sticky;top:0;z-index:10;background:#0a1628;color:#fff;display:flex;justify-content:space-between;align-items:center;padding:12px 16px;gap:12px';
   closeBtn.innerHTML = `
     <button onclick="window.print()" style="background:#f97316;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:15px;font-weight:700;cursor:pointer;flex:1">🖨️ Uložit jako PDF</button>
     <button onclick="document.getElementById('pdf-print-overlay').remove()" style="background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:8px;padding:10px 16px;font-size:15px;cursor:pointer">✕ Zavřít</button>`;
 
   const frame = document.createElement('div');
   frame.id = 'pdf-frame-content';
-  frame.innerHTML = html;
+  frame.innerHTML = bodyHtml;
 
   overlay.appendChild(closeBtn);
   overlay.appendChild(frame);
   document.body.appendChild(overlay);
 
-  // Load Noto Sans into main document head (needed for innerHTML injection)
+  // Load Noto Sans into main document head
   if (!document.getElementById('noto-sans-font')) {
     const link = document.createElement('link');
     link.id = 'noto-sans-font';
@@ -3339,7 +3170,16 @@ ${coverHtml}
     document.head.appendChild(link);
   }
 
-  // PDF styles injected into main document
+  // Inject PDF CSS as <style> into document.head (the fix: innerHTML strips <style> from full HTML docs)
+  let pdfStyleEl = document.getElementById('pdf-content-style');
+  if (!pdfStyleEl) {
+    pdfStyleEl = document.createElement('style');
+    pdfStyleEl.id = 'pdf-content-style';
+    document.head.appendChild(pdfStyleEl);
+  }
+  pdfStyleEl.textContent = pdfCss;
+
+  // Print styles
   let printStyle = document.getElementById('pdf-print-style');
   if (!printStyle) {
     printStyle = document.createElement('style');
