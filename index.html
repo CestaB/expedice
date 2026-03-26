@@ -825,7 +825,7 @@ img{max-width:100%}
     </div>
 
     <div style="margin-top:32px;text-align:center;color:#475569;font-size:12px">
-      Vytvořeno s ❤️ pro výpravné dobrodruhy · v7.7
+      Vytvořeno s ❤️ pro výpravné dobrodruhy · v7.8
     </div>
   </div>
 </div>
@@ -867,7 +867,7 @@ img{max-width:100%}
       <input type="file" accept=".json" style="display:none" onchange="importBackup(this)">
     </label>
     <div id="trips-list"></div>
-    <div style="text-align:center;padding:12px 0 4px;font-size:11px;color:var(--g400);font-weight:600">v7.7</div>
+    <div style="text-align:center;padding:12px 0 4px;font-size:11px;color:var(--g400);font-weight:600">v7.8</div>
   </div>
 </div>
 
@@ -1125,7 +1125,7 @@ img{max-width:100%}
 <!-- Settings Modal -->
 <div id="modal-settings" class="modal-overlay hidden" onclick="closeSettingsOnBg(event)">
   <div class="modal-card">
-    <h3 style="display:flex;justify-content:space-between;align-items:center">⚙️ Nastavení <span style="font-size:13px;font-weight:600;color:var(--orange);background:var(--orange-l);padding:2px 8px;border-radius:6px">v7.7</span></h3>
+    <h3 style="display:flex;justify-content:space-between;align-items:center">⚙️ Nastavení <span style="font-size:13px;font-weight:600;color:var(--orange);background:var(--orange-l);padding:2px 8px;border-radius:6px">v7.8</span></h3>
     <div class="field-group">
       <div class="form-label">API klíč (Anthropic)</div>
       <input id="settings-key" type="text" class="form-input"
@@ -1146,7 +1146,7 @@ img{max-width:100%}
         style="color:var(--red);font-size:13px;font-weight:700;padding:8px 0">
         🗑️ Smazat všechna data a výpravy
       </button>
-      <span style="font-size:12px;color:var(--g400);font-weight:600">v7.7</span>
+      <span style="font-size:12px;color:var(--g400);font-weight:600">v7.8</span>
     </div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeSettings()">Zavřít</button>
@@ -1798,7 +1798,7 @@ async function generateTrip(fd, apiKey) {
     headers,
     body: JSON.stringify({
       model: getModel(),
-      max_tokens: 8000,
+      max_tokens: 16000,
       stream: true,
       messages: [{ role: 'user', content: prompt }],
     }),
@@ -1866,18 +1866,36 @@ function parseSseText(sseText) {
 }
 
 function extractJSON(raw) {
-  // Try to find JSON between markers
-  const endIdx = raw.indexOf(JSON_END);
-  const jsonStr = endIdx !== -1 ? raw.slice(0, endIdx).trim() : raw.trim();
+  // 1. Vyřízni obsah mezi JSON markery (nejlepší případ)
+  const startIdx = raw.indexOf(JSON_START);
+  const endIdx   = raw.indexOf(JSON_END);
+  if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+    const between = raw.slice(startIdx + JSON_START.length, endIdx).trim();
+    try { return JSON.parse(between); } catch {}
+  }
 
-  // Try direct parse
-  try { return JSON.parse(jsonStr); } catch {}
+  // 2. Odstraň markdown kódový blok (```json ... ```) pokud ho AI přidalo
+  let cleaned = raw
+    .replace(/^```(?:json)?\s*/m, '')  // začátek ```json nebo ```
+    .replace(/\s*```\s*$/m, '')         // konec ```
+    .trim();
 
-  // Try finding first { last }
-  const first = jsonStr.indexOf('{');
-  const last  = jsonStr.lastIndexOf('}');
+  // 3. Odstraň JSON_START marker pokud je v textu
+  const sIdx = cleaned.indexOf(JSON_START);
+  if (sIdx !== -1) cleaned = cleaned.slice(sIdx + JSON_START.length).trim();
+
+  // 4. Odstraň text za JSON_END pokud je přítomen
+  const eIdx = cleaned.indexOf(JSON_END);
+  if (eIdx !== -1) cleaned = cleaned.slice(0, eIdx).trim();
+
+  // 5. Zkus přímé parsování
+  try { return JSON.parse(cleaned); } catch {}
+
+  // 6. Fallback — najdi první { a poslední }
+  const first = cleaned.indexOf('{');
+  const last  = cleaned.lastIndexOf('}');
   if (first !== -1 && last > first) {
-    try { return JSON.parse(jsonStr.slice(first, last+1)); } catch {}
+    try { return JSON.parse(cleaned.slice(first, last + 1)); } catch {}
   }
 
   throw new Error('AI vrátilo neplatný formát. Zkus to znovu.');
