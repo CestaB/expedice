@@ -825,7 +825,7 @@ img{max-width:100%}
     </div>
 
     <div style="margin-top:32px;text-align:center;color:#475569;font-size:12px">
-      Vytvořeno s ❤️ pro výpravné dobrodruhy · v7.5
+      Vytvořeno s ❤️ pro výpravné dobrodruhy · v7.6
     </div>
   </div>
 </div>
@@ -867,7 +867,7 @@ img{max-width:100%}
       <input type="file" accept=".json" style="display:none" onchange="importBackup(this)">
     </label>
     <div id="trips-list"></div>
-    <div style="text-align:center;padding:12px 0 4px;font-size:11px;color:var(--g400);font-weight:600">v7.5</div>
+    <div style="text-align:center;padding:12px 0 4px;font-size:11px;color:var(--g400);font-weight:600">v7.6</div>
   </div>
 </div>
 
@@ -1125,7 +1125,7 @@ img{max-width:100%}
 <!-- Settings Modal -->
 <div id="modal-settings" class="modal-overlay hidden" onclick="closeSettingsOnBg(event)">
   <div class="modal-card">
-    <h3 style="display:flex;justify-content:space-between;align-items:center">⚙️ Nastavení <span style="font-size:13px;font-weight:600;color:var(--orange);background:var(--orange-l);padding:2px 8px;border-radius:6px">v7.5</span></h3>
+    <h3 style="display:flex;justify-content:space-between;align-items:center">⚙️ Nastavení <span style="font-size:13px;font-weight:600;color:var(--orange);background:var(--orange-l);padding:2px 8px;border-radius:6px">v7.6</span></h3>
     <div class="field-group">
       <div class="form-label">API klíč (Anthropic)</div>
       <input id="settings-key" type="text" class="form-input"
@@ -1146,7 +1146,7 @@ img{max-width:100%}
         style="color:var(--red);font-size:13px;font-weight:700;padding:8px 0">
         🗑️ Smazat všechna data a výpravy
       </button>
-      <span style="font-size:12px;color:var(--g400);font-weight:600">v7.5</span>
+      <span style="font-size:12px;color:var(--g400);font-weight:600">v7.6</span>
     </div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeSettings()">Zavřít</button>
@@ -1808,28 +1808,27 @@ async function generateTrip(fd, apiKey) {
     throw new Error(e.error?.message || `HTTP ${res.status}`);
   }
 
-  if (!res.body) {
-    // Záložní větev pro velmi staré prohlížeče bez ReadableStream
-    const data = await res.json();
-    return extractJSON(data.content?.[0]?.text || '');
+  if (isIOS) {
+    // iOS Safari: stream:true udržuje spojení živé (data tečou → WebKit timeout se nespustí),
+    // ale ReadableStream přes getReader() je na iOS nespolehlivý pro cross-origin POST.
+    // Řešení: přečteme kompletní odpověď jako text a pak parsujeme SSE formát.
+    const sseText = await res.text();
+    return extractJSON(parseSseText(sseText));
   }
 
-  // SSE streaming parser — čte chunky průběžně
+  // Desktop streaming — čte chunky průběžně přes ReadableStream
   const reader = res.body.getReader();
   const dec = new TextDecoder();
-  let buf = '';   // buffer pro nekompletní SSE řádky
-  let jbuf = '';  // buffer pro JSON obsah
-  let jStarted = false;
+  let buf = '';      // buffer pro nekompletní SSE řádky
+  let fullText = ''; // kompletní text odpovědi AI
 
   try {
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-
       buf += dec.decode(value, { stream: true });
       const lines = buf.split('\n');
-      buf = lines.pop(); // poslední řádek může být nekompletní — nechám ho v bufferu
-
+      buf = lines.pop();
       for (const line of lines) {
         if (!line.startsWith('data: ')) continue;
         const raw = line.slice(6).trim();
@@ -1837,19 +1836,7 @@ async function generateTrip(fd, apiKey) {
         let parsed;
         try { parsed = JSON.parse(raw); } catch { continue; }
         if (parsed.type === 'content_block_delta' && parsed.delta?.type === 'text_delta') {
-          const chunk = parsed.delta.text || '';
-          if (!jStarted) {
-            jbuf += chunk;
-            const idx = jbuf.indexOf(JSON_START);
-            if (idx !== -1) {
-              jStarted = true;
-              jbuf = jbuf.slice(idx + JSON_START.length);
-            } else if (jbuf.length > 200) {
-              jbuf = jbuf.slice(-100); // zabraň neomezenému růstu před JSON_START
-            }
-          } else {
-            jbuf += chunk;
-          }
+          fullText += parsed.delta.text || '';
         }
       }
     }
@@ -1857,7 +1844,23 @@ async function generateTrip(fd, apiKey) {
     reader.releaseLock();
   }
 
-  return extractJSON(jbuf);
+  return extractJSON(fullText);
+}
+
+/* Parsuje kompletní SSE text a vrátí spojený text z content_block_delta eventů */
+function parseSseText(sseText) {
+  let fullText = '';
+  for (const line of sseText.split('\n')) {
+    if (!line.startsWith('data: ')) continue;
+    const raw = line.slice(6).trim();
+    if (raw === '[DONE]') continue;
+    let parsed;
+    try { parsed = JSON.parse(raw); } catch { continue; }
+    if (parsed.type === 'content_block_delta' && parsed.delta?.type === 'text_delta') {
+      fullText += parsed.delta.text || '';
+    }
+  }
+  return fullText;
 }
 
 function extractJSON(raw) {
