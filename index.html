@@ -825,7 +825,7 @@ img{max-width:100%}
     </div>
 
     <div style="margin-top:32px;text-align:center;color:#475569;font-size:12px">
-      Vytvořeno s ❤️ pro výpravné dobrodruhy · v7.3
+      Vytvořeno s ❤️ pro výpravné dobrodruhy · v7.4
     </div>
   </div>
 </div>
@@ -867,7 +867,7 @@ img{max-width:100%}
       <input type="file" accept=".json" style="display:none" onchange="importBackup(this)">
     </label>
     <div id="trips-list"></div>
-    <div style="text-align:center;padding:12px 0 4px;font-size:11px;color:var(--g400);font-weight:600">v7.3</div>
+    <div style="text-align:center;padding:12px 0 4px;font-size:11px;color:var(--g400);font-weight:600">v7.4</div>
   </div>
 </div>
 
@@ -1125,7 +1125,7 @@ img{max-width:100%}
 <!-- Settings Modal -->
 <div id="modal-settings" class="modal-overlay hidden" onclick="closeSettingsOnBg(event)">
   <div class="modal-card">
-    <h3 style="display:flex;justify-content:space-between;align-items:center">⚙️ Nastavení <span style="font-size:13px;font-weight:600;color:var(--orange);background:var(--orange-l);padding:2px 8px;border-radius:6px">v7.3</span></h3>
+    <h3 style="display:flex;justify-content:space-between;align-items:center">⚙️ Nastavení <span style="font-size:13px;font-weight:600;color:var(--orange);background:var(--orange-l);padding:2px 8px;border-radius:6px">v7.4</span></h3>
     <div class="field-group">
       <div class="form-label">API klíč (Anthropic)</div>
       <input id="settings-key" type="text" class="form-input"
@@ -1146,7 +1146,7 @@ img{max-width:100%}
         style="color:var(--red);font-size:13px;font-weight:700;padding:8px 0">
         🗑️ Smazat všechna data a výpravy
       </button>
-      <span style="font-size:12px;color:var(--g400);font-weight:600">v7.3</span>
+      <span style="font-size:12px;color:var(--g400);font-weight:600">v7.4</span>
     </div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeSettings()">Zavřít</button>
@@ -1680,8 +1680,19 @@ async function startGeneration() {
   state.abortController = new AbortController();
   state.currentTrip = null;
 
+  // Wake Lock — zabraňuje zamčení obrazovky během generování
+  let wakeLock = null;
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+    }
+  } catch(e) {
+    // Wake Lock není k dispozici — nevadí, pokračujeme bez něj
+    console.warn('[Expedice] Wake Lock nedostupný:', e.message);
+  }
+
   setText(document.getElementById('loading-dest'), fd.destinace);
-  setText(document.getElementById('loading-sub'), 'AI pracuje — obvykle trvá 20–40 sekund…');
+  setText(document.getElementById('loading-sub'), 'AI pracuje — na mobilu může trvat 1–2 minuty, nech obrazovku aktivní…');
   showView('loading');
   startProgressAnimation();
 
@@ -1713,6 +1724,10 @@ async function startGeneration() {
     }
   } finally {
     state.generating = false;
+    // Wake Lock uvolnit — obrazovka se opět může sama zamknout
+    if (wakeLock) {
+      try { await wakeLock.release(); } catch(e) {}
+    }
   }
 }
 
