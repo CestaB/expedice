@@ -825,7 +825,7 @@ img{max-width:100%}
     </div>
 
     <div style="margin-top:32px;text-align:center;color:#475569;font-size:12px">
-      Vytvořeno s ❤️ pro výpravné dobrodruhy · v7.4
+      Vytvořeno s ❤️ pro výpravné dobrodruhy · v7.5
     </div>
   </div>
 </div>
@@ -867,7 +867,7 @@ img{max-width:100%}
       <input type="file" accept=".json" style="display:none" onchange="importBackup(this)">
     </label>
     <div id="trips-list"></div>
-    <div style="text-align:center;padding:12px 0 4px;font-size:11px;color:var(--g400);font-weight:600">v7.4</div>
+    <div style="text-align:center;padding:12px 0 4px;font-size:11px;color:var(--g400);font-weight:600">v7.5</div>
   </div>
 </div>
 
@@ -1125,7 +1125,7 @@ img{max-width:100%}
 <!-- Settings Modal -->
 <div id="modal-settings" class="modal-overlay hidden" onclick="closeSettingsOnBg(event)">
   <div class="modal-card">
-    <h3 style="display:flex;justify-content:space-between;align-items:center">⚙️ Nastavení <span style="font-size:13px;font-weight:600;color:var(--orange);background:var(--orange-l);padding:2px 8px;border-radius:6px">v7.4</span></h3>
+    <h3 style="display:flex;justify-content:space-between;align-items:center">⚙️ Nastavení <span style="font-size:13px;font-weight:600;color:var(--orange);background:var(--orange-l);padding:2px 8px;border-radius:6px">v7.5</span></h3>
     <div class="field-group">
       <div class="form-label">API klíč (Anthropic)</div>
       <input id="settings-key" type="text" class="form-input"
@@ -1146,7 +1146,7 @@ img{max-width:100%}
         style="color:var(--red);font-size:13px;font-weight:700;padding:8px 0">
         🗑️ Smazat všechna data a výpravy
       </button>
-      <span style="font-size:12px;color:var(--g400);font-weight:600">v7.4</span>
+      <span style="font-size:12px;color:var(--g400);font-weight:600">v7.5</span>
     </div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeSettings()">Zavřít</button>
@@ -1777,16 +1777,11 @@ function renderProgressSteps(active) {
 }
 
 /* ===== API CALL ===== */
+// isIOS se používá jen pro chat (ponecháno beze změny)
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
 async function generateTrip(fd, apiKey) {
   const prompt = buildPrompt(fd);
-  const body = JSON.stringify({
-    model: getModel(),
-    max_tokens: 8000,
-    stream: !isIOS,
-    messages: [{ role:'user', content: prompt }],
-  });
   const headers = {
     'Content-Type': 'application/json',
     'x-api-key': apiKey,
@@ -1794,89 +1789,74 @@ async function generateTrip(fd, apiKey) {
     'anthropic-dangerous-direct-browser-access': 'true',
   };
 
-  if (isIOS) {
-    // iOS Safari: non-streaming, with timeout + retry
-    const iosFetch = async (attempt) => {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 90000); // 90s timeout
-      // Combine with user abort signal
-      const userAbort = state.abortController?.signal;
-      if (userAbort) userAbort.addEventListener('abort', () => controller.abort());
-      try {
-        const res = await fetch('https://api.anthropic.com/v1/messages', {
-          method:'POST', headers,
-          body: JSON.stringify({ model:getModel(), max_tokens:8000, stream:false,
-            messages:[{role:'user',content:prompt}] }),
-          signal: controller.signal,
-        });
-        clearTimeout(timeout);
-        if (!res.ok) {
-          const e = await res.json().catch(()=>({}));
-          throw new Error(e.error?.message || `Chyba serveru ${res.status}`);
-        }
-        const data = await res.json();
-        return data.content?.[0]?.text || '';
-      } catch(e) {
-        clearTimeout(timeout);
-        if (userAbort?.aborted) throw new Error('AbortError');
-        if (attempt < 2 && (e.name === 'TypeError' || e.message.includes('Load failed') || e.message.includes('network'))) {
-          // Network error — wait 2s and retry
-          setText(document.getElementById('loading-sub'), `Síťová chyba, zkouším znovu (pokus ${attempt+1}/2)…`);
-          await new Promise(r => setTimeout(r, 2000));
-          return iosFetch(attempt + 1);
-        }
-        throw new Error(e.message === 'Load failed' ? 'Chyba sítě — zkontroluj připojení k internetu' : e.message);
-      }
-    };
-    const text = await iosFetch(1);
-    return extractJSON(text);
-  }
-
-  // Streaming
+  // Streaming funguje na iOS 15+ stejně jako na desktopu.
+  // Data tečou průběžně → WebKit 60s timeout se nikdy nespustí.
   const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method:'POST', headers, body,
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      model: getModel(),
+      max_tokens: 8000,
+      stream: true,
+      messages: [{ role: 'user', content: prompt }],
+    }),
     signal: state.abortController?.signal,
   });
+
   if (!res.ok) {
-    const e = await res.json().catch(()=>({}));
+    const e = await res.json().catch(() => ({}));
     throw new Error(e.error?.message || `HTTP ${res.status}`);
   }
 
+  if (!res.body) {
+    // Záložní větev pro velmi staré prohlížeče bez ReadableStream
+    const data = await res.json();
+    return extractJSON(data.content?.[0]?.text || '');
+  }
+
+  // SSE streaming parser — čte chunky průběžně
   const reader = res.body.getReader();
   const dec = new TextDecoder();
-  let buf = '';
-  let jbuf = '';
+  let buf = '';   // buffer pro nekompletní SSE řádky
+  let jbuf = '';  // buffer pro JSON obsah
   let jStarted = false;
 
-  while(true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buf += dec.decode(value, { stream:true });
-    const lines = buf.split('\n');
-    buf = lines.pop();
-    for (const line of lines) {
-      if (!line.startsWith('data: ')) continue;
-      const raw = line.slice(6).trim();
-      if (raw === '[DONE]') continue;
-      let parsed;
-      try { parsed = JSON.parse(raw); } catch { continue; }
-      if (parsed.type === 'content_block_delta' && parsed.delta?.type === 'text_delta') {
-        const chunk = parsed.delta.text || '';
-        if (!jStarted) {
-          jbuf += chunk;
-          const idx = jbuf.indexOf(JSON_START);
-          if (idx !== -1) {
-            jStarted = true;
-            jbuf = jbuf.slice(idx + JSON_START.length);
-          } else if (jbuf.length > 200) {
-            jbuf = jbuf.slice(-100);
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buf += dec.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop(); // poslední řádek může být nekompletní — nechám ho v bufferu
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const raw = line.slice(6).trim();
+        if (raw === '[DONE]') continue;
+        let parsed;
+        try { parsed = JSON.parse(raw); } catch { continue; }
+        if (parsed.type === 'content_block_delta' && parsed.delta?.type === 'text_delta') {
+          const chunk = parsed.delta.text || '';
+          if (!jStarted) {
+            jbuf += chunk;
+            const idx = jbuf.indexOf(JSON_START);
+            if (idx !== -1) {
+              jStarted = true;
+              jbuf = jbuf.slice(idx + JSON_START.length);
+            } else if (jbuf.length > 200) {
+              jbuf = jbuf.slice(-100); // zabraň neomezenému růstu před JSON_START
+            }
+          } else {
+            jbuf += chunk;
           }
-        } else {
-          jbuf += chunk;
         }
       }
     }
+  } finally {
+    reader.releaseLock();
   }
+
   return extractJSON(jbuf);
 }
 
