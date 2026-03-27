@@ -742,9 +742,10 @@ img{max-width:100%}
 }
 .trip-map-wrap{margin:16px 0;border-radius:16px;overflow:hidden;border:1px solid var(--g200)}
 #trip-map{height:260px;width:100%}
-.trip-map-legend{display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px;background:var(--g50)}
-.trip-map-legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--g600);font-weight:600}
-.trip-map-legend-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;border:2px solid rgba(0,0,0,.15)}
+.trip-map-legend{display:flex;flex-direction:column;gap:2px;padding:8px 12px;background:var(--g50)}
+.trip-map-legend-item{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--g600);font-weight:600;padding:6px 8px;border-radius:8px;cursor:pointer;transition:background .15s}
+.trip-map-legend-item:active{background:var(--g200)}
+.trip-map-legend-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;border:2px solid rgba(0,0,0,.15)}
 .results-stat-pp{font-size:11px;color:#93c5fd;margin-top:5px;font-weight:600;opacity:.9}
 .chat-msg{margin-bottom:14px}
 .chat-msg-user{display:flex;justify-content:flex-end}
@@ -825,7 +826,7 @@ img{max-width:100%}
     </div>
 
     <div style="margin-top:32px;text-align:center;color:#475569;font-size:12px">
-      Vytvořeno s ❤️ pro výpravné dobrodruhy · v7.8
+      Vytvořeno s ❤️ pro výpravné dobrodruhy · v7.9
     </div>
   </div>
 </div>
@@ -867,7 +868,7 @@ img{max-width:100%}
       <input type="file" accept=".json" style="display:none" onchange="importBackup(this)">
     </label>
     <div id="trips-list"></div>
-    <div style="text-align:center;padding:12px 0 4px;font-size:11px;color:var(--g400);font-weight:600">v7.8</div>
+    <div style="text-align:center;padding:12px 0 4px;font-size:11px;color:var(--g400);font-weight:600">v7.9</div>
   </div>
 </div>
 
@@ -1113,7 +1114,7 @@ img{max-width:100%}
   <div id="tab-budget" class="tab-content hidden"></div>
   <div id="tab-check" class="tab-content hidden"></div>
   <div id="tab-phrases" class="tab-content hidden"></div>
-  <div id="tab-chat" class="tab-pane" style="display:none">
+  <div id="tab-chat" class="tab-content hidden">
     <div id="chat-messages" style="padding:12px 0;min-height:200px"></div>
     <div style="display:flex;gap:8px;padding:12px 0;border-top:1px solid var(--g200)">
       <input id="chat-input" type="text" placeholder="Zeptej se na cokoli o tripu…" style="flex:1;border:1px solid var(--g200);border-radius:10px;padding:9px 13px;font-size:14px;background:var(--g50);color:var(--g700)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMessage()}">
@@ -1125,7 +1126,7 @@ img{max-width:100%}
 <!-- Settings Modal -->
 <div id="modal-settings" class="modal-overlay hidden" onclick="closeSettingsOnBg(event)">
   <div class="modal-card">
-    <h3 style="display:flex;justify-content:space-between;align-items:center">⚙️ Nastavení <span style="font-size:13px;font-weight:600;color:var(--orange);background:var(--orange-l);padding:2px 8px;border-radius:6px">v7.8</span></h3>
+    <h3 style="display:flex;justify-content:space-between;align-items:center">⚙️ Nastavení <span style="font-size:13px;font-weight:600;color:var(--orange);background:var(--orange-l);padding:2px 8px;border-radius:6px">v7.9</span></h3>
     <div class="field-group">
       <div class="form-label">API klíč (Anthropic)</div>
       <input id="settings-key" type="text" class="form-input"
@@ -1146,7 +1147,7 @@ img{max-width:100%}
         style="color:var(--red);font-size:13px;font-weight:700;padding:8px 0">
         🗑️ Smazat všechna data a výpravy
       </button>
-      <span style="font-size:12px;color:var(--g400);font-weight:600">v7.8</span>
+      <span style="font-size:12px;color:var(--g400);font-weight:600">v7.9</span>
     </div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeSettings()">Zavřít</button>
@@ -2097,6 +2098,20 @@ function toggleDay(idx) {
   if (card) card.classList.toggle('open');
 }
 
+function scrollToDay(idx) {
+  // Přepni na záložku Dny pokud není aktivní
+  const daysTab = document.getElementById('tab-days');
+  if (daysTab && daysTab.classList.contains('hidden')) {
+    switchTabSilent('days');
+  }
+  const card = document.getElementById('day-card-'+idx);
+  if (!card) return;
+  // Rozbal kartu pokud je zavřená
+  if (!card.classList.contains('open')) card.classList.add('open');
+  // Plynulý scroll na kartu
+  card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 function renderDayBody(day) {
   let html = '';
 
@@ -2133,8 +2148,7 @@ function renderDayBody(day) {
         ${n.max_delka_m ? `<br>Max. délka stanoviště: <strong>${esc(n.max_delka_m)} m</strong>` : ''}
         ${isWild ? '' : (n.cena_eur ? `<br>Cena: <strong>${esc(n.cena_eur)} € / noc</strong>${n.cena_czk?' (~'+Math.round(n.cena_czk)+' Kč)':''}` : '')}
         ${n.camper_note ? '<br><em>'+esc(n.camper_note)+'</em>' : ''}
-        ${n.booking_url && n.booking_url !== 'https://...' ?
-          `<a class="booking-link" href="${esc(n.booking_url)}" target="_blank" rel="noopener">🔗 Rezervace</a>` : ''}
+        ${n.nazev ? `<a class="booking-link" href="https://www.google.com/search?q=${encodeURIComponent(n.nazev + ' camping booking')}" target="_blank" rel="noopener">🔍 Hledat kemp</a>` : ''}
       </div>
     </div>`;
   }
@@ -2506,7 +2520,13 @@ async function renderTripMap(data) {
     }
   }
   const legend = document.getElementById('trip-map-legend');
-  if (legend) legend.innerHTML = labels.map(item => `<div class="trip-map-legend-item"><div class="trip-map-legend-dot" style="background:${item.isHome?'#0a1628':item.color}"></div>${esc(item.isHome?'🏠 '+item.label:'Den '+item.day+': '+item.label)}</div>`).join('');
+  if (legend) legend.innerHTML = labels.map(item => {
+    const dayIdx = item.isHome ? -1 : (item.day - 1);
+    const clickAttr = dayIdx >= 0 ? ` onclick="scrollToDay(${dayIdx})"` : '';
+    const icon = item.isHome ? '🏠 ' : '';
+    const label = item.isHome ? item.label : 'Den ' + item.day + ': ' + item.label;
+    return `<div class="trip-map-legend-item"${clickAttr}><div class="trip-map-legend-dot" style="background:${item.isHome?'#0a1628':item.color}"></div>${icon}${esc(label)}</div>`;
+  }).join('');
 }
 
 /* ===== AI CHAT ===== */
